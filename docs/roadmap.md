@@ -6,7 +6,8 @@
 - [x] Verify Home Assistant OAuth/application authentication approach.
 - [ ] Specify and prototype the authenticated sensor telemetry bridge.
 - [ ] Verify basic Windows system sensor access without administrator elevation.
-- [ ] Confirm installer and runtime deployment strategy.
+- [x] Confirm the WinUI 3 WebView2 hosting strategy and Evergreen runtime model.
+- [x] Add WebView2 runtime availability/error handling to the dashboard host.
 
 ## Phase 1 — Foundation
 
@@ -28,7 +29,7 @@
 - [x] Implement OAuth PKCE/token lifecycle (pending live-instance acceptance test).
 - [x] Implement a one-connection WebSocket client and state-change subscription.
 - [x] Add a connection supervisor with reconnect/backoff and status events.
-- [x] Add entity discovery and search to the UI; favourites remain open.
+- [x] Add the authenticated entity REST query service for native integrations; use the Home Assistant frontend for dashboard browsing and entity controls.
 - [ ] Add service, scene, and script controls.
 - [ ] Complete integration pairing and telemetry entities.
 
@@ -48,14 +49,14 @@
 - [ ] Safe system actions.
 - [ ] Shared action engine and Home Assistant exposure.
 
-## Phase 5 — Dashboard
+## Phase 5 — Home Assistant dashboard experience
 
-- [ ] Widget model and renderer.
-- [ ] Full dashboard.
-- [ ] Tray dashboard.
-- [ ] Drag/drop editor and resizing.
-- [ ] Layout persistence and templates.
-- [ ] Sensors, entities, actions, audio, and application widgets.
+- [x] Embed the actual Home Assistant frontend in a native WinUI 3 window using WebView2.
+- [x] Keep the Home Assistant frontend's cards, entity controls, layouts, and styling intact.
+- [x] Persist the WebView2 profile per Windows user and clear it on explicit disconnect.
+- [ ] Add a native dashboard selector that can switch among Home Assistant dashboards/views.
+- [ ] Add a compact tray dashboard surface that hosts selected Home Assistant views.
+- [ ] Add native Windows companion surfaces (system sensors, media, quick actions) around the embedded Home Assistant dashboard.
 
 ## Phase 6 — Advanced features
 

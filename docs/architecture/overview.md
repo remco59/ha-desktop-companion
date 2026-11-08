@@ -14,7 +14,7 @@ The first release targets one Home Assistant instance and one interactive Window
 
 ## Runtime principles
 
-- The desktop UI and background work share application services but have separate lifecycles.
+- The native desktop shell and background work share application services but have separate lifecycles.
 - Closing the main window must not stop background monitoring.
 - Explicit Exit shuts down the application host.
 - Sensors, actions, entities, and widgets have stable identifiers and shared definitions.
@@ -40,4 +40,6 @@ SQLite will hold non-secret configuration: dashboard layouts, widget configurati
 
 ## UI
 
-The full application and tray pop-up use the same widget definitions and view models. They may have separate layouts and visibility settings but must not duplicate control logic.
+The application shell, navigation, connection settings, notifications, and tray experience are native WinUI 3. The Home Assistant dashboard is rendered by the actual Home Assistant frontend inside WebView2; Desktop Companion must not recreate Lovelace cards, entity toggles, or dashboard controls as native lookalikes. Native Windows surfaces may wrap, launch, or complement Home Assistant views, while calls that need native Windows integration go through application services.
+
+The WebView2 dashboard uses a dedicated persistent profile under the current Windows user's LocalAppData folder. Home Assistant handles its own frontend sign-in within that profile. This session is separate from the native OAuth credentials used for REST and WebSocket access; access and refresh tokens must never be injected into dashboard JavaScript or exposed through a page bridge. The default Evergreen WebView2 Runtime is used, with a clear error when the runtime is unavailable.

@@ -47,7 +47,7 @@ public sealed partial class TrayPopupWindow : Window
 
         if (!GetCursorPos(out var cursor))
         {
-            cursor = new NativePoint(0, 0);
+            cursor = default;
         }
 
         var cursorPoint = new PointInt32(cursor.X, cursor.Y);

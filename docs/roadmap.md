@@ -40,10 +40,13 @@ Status legend:
 
 - [x] Define core sensor descriptor and reading contracts.
 - [x] Add the initial Windows system provider scaffold (uptime, hostname, Windows version).
-- [ ] Implement CPU, memory, storage, network, and uptime readings with stable IDs and units.
-- [ ] Add optional GPU and hardware temperature/fan providers with capability diagnostics.
-- [ ] Add provider registry, sampling intervals, stale-data handling, and sensor enable/disable preferences.
-- [ ] Build the native Sensors page and compact Overview summaries.
+- [x] Implement initial CPU, physical-memory, and uptime readings with stable IDs and units.
+- [ ] Implement storage capacity/used/free by volume and network throughput/adapter status.
+- [ ] Add optional GPU and hardware temperature/fan providers only where supported, with capability diagnostics.
+- [x] Add a two-second sampler with last-known reading retention and explicit stale status.
+- [ ] Add provider registry, configurable sampling intervals, and sensor enable/disable preferences.
+- [x] Build the initial native Sensors page and CPU/memory/uptime Overview summaries.
+- [ ] Verify sensor values, first-sample CPU priming, tray sampling, and stale/error behaviour on Windows 11 hardware.
 
 ## Phase 3 — Secure Home Assistant pairing and telemetry
 
@@ -103,6 +106,8 @@ Status legend:
 
 ## Next implementation slice
 
-The native dashboard selector is implemented in open PR #18, with Control, Media, and System presets and Control as the default. Latest Windows CI passed; real Windows/Home Assistant acceptance is still required. Do not merge without explicit user approval. After acceptance and merge approval, implement the first Windows sensor vertical slice (CPU + memory + uptime). Design the secure telemetry protocol before publishing any sensor to Home Assistant.
+The dashboard selector is in open draft PR #18; the user confirmed the Control dashboard renders on Windows 11. Multi-view persistence and reconnect acceptance remain open.
+
+The first CPU + physical-memory + uptime sensor slice is in draft PR #19, stacked on PR #18. Next implement storage and network readings, followed by the provider registry and configurable sampling preferences. Design the secure telemetry protocol before publishing sensors to Home Assistant.
 
 See [the Product Plan](product-plan.md) for scope, implementation notes, acceptance criteria, and the session restart checklist.

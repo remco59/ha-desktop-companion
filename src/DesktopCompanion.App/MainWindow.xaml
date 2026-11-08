@@ -109,22 +109,22 @@
                         <Border Grid.Column="0" Background="#1C1F26" CornerRadius="12" Padding="15">
                             <StackPanel Spacing="7">
                                 <TextBlock Text="CPU" Foreground="#A7ADB7" FontSize="12" />
-                                <TextBlock Text="—" Foreground="White" FontSize="26" FontWeight="SemiBold" />
-                                <TextBlock Text="Sensor provider next" Foreground="#818A97" FontSize="10" />
+                                <TextBlock x:Name="OverviewCpuValue" Text="—" Foreground="White" FontSize="26" FontWeight="SemiBold" />
+                                <TextBlock x:Name="OverviewCpuDetail" Text="Waiting for sensor sample" Foreground="#818A97" FontSize="10" />
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="1" Background="#1C1F26" CornerRadius="12" Padding="15">
                             <StackPanel Spacing="7">
                                 <TextBlock Text="MEMORY" Foreground="#A7ADB7" FontSize="12" />
-                                <TextBlock Text="—" Foreground="White" FontSize="26" FontWeight="SemiBold" />
-                                <TextBlock Text="Sensor provider next" Foreground="#818A97" FontSize="10" />
+                                <TextBlock x:Name="OverviewMemoryValue" Text="—" Foreground="White" FontSize="26" FontWeight="SemiBold" />
+                                <TextBlock x:Name="OverviewMemoryDetail" Text="Waiting for sensor sample" Foreground="#818A97" FontSize="10" />
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="2" Background="#1C1F26" CornerRadius="12" Padding="15">
                             <StackPanel Spacing="7">
                                 <TextBlock Text="GPU" Foreground="#A7ADB7" FontSize="12" />
-                                <TextBlock Text="—" Foreground="White" FontSize="26" FontWeight="SemiBold" />
-                                <TextBlock Text="Sensor provider next" Foreground="#818A97" FontSize="10" />
+                                <TextBlock Text="Not reported" Foreground="White" FontSize="18" FontWeight="SemiBold" />
+                                <TextBlock Text="Optional hardware provider" Foreground="#818A97" FontSize="10" />
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="3" Background="#1C1F26" CornerRadius="12" Padding="15">
@@ -219,6 +219,78 @@
                         </Border>
                     </StackPanel>
                 </Border>
+                <StackPanel x:Name="SensorsContent" Visibility="Collapsed" Spacing="16">
+                    <Border Background="#1C1F26" CornerRadius="14" Padding="20">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Windows system sensors" FontSize="19" FontWeight="SemiBold" Foreground="White" />
+                            <TextBlock Text="Live readings from documented Windows system APIs. Sampling continues while Desktop Companion is in the tray."
+                                       FontSize="12" Foreground="#A7ADB7" TextWrapping="Wrap" />
+                            <TextBlock x:Name="SensorLastUpdatedText" Text="Waiting for the first sample…"
+                                       FontSize="11" Foreground="#818A97" />
+                        </StackPanel>
+                    </Border>
+                    <Grid ColumnSpacing="12" RowSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Grid.Column="0" Background="#1C1F26" CornerRadius="12" Padding="18">
+                            <StackPanel Spacing="7">
+                                <TextBlock Text="CPU usage" FontSize="12" Foreground="#A7ADB7" />
+                                <TextBlock x:Name="SensorCpuValue" Text="—" FontSize="27" FontWeight="SemiBold" Foreground="White" />
+                                <TextBlock x:Name="SensorCpuDetail" Text="Waiting for second sample…" FontSize="11" Foreground="#818A97" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Row="0" Grid.Column="1" Background="#1C1F26" CornerRadius="12" Padding="18">
+                            <StackPanel Spacing="7">
+                                <TextBlock Text="Memory usage" FontSize="12" Foreground="#A7ADB7" />
+                                <TextBlock x:Name="SensorMemoryValue" Text="—" FontSize="27" FontWeight="SemiBold" Foreground="White" />
+                                <TextBlock x:Name="SensorMemoryDetail" Text="Waiting for sensor sample" FontSize="11" Foreground="#818A97" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Row="0" Grid.Column="2" Background="#1C1F26" CornerRadius="12" Padding="18">
+                            <StackPanel Spacing="7">
+                                <TextBlock Text="System uptime" FontSize="12" Foreground="#A7ADB7" />
+                                <TextBlock x:Name="SensorUptimeValue" Text="—" FontSize="27" FontWeight="SemiBold" Foreground="White" />
+                                <TextBlock Text="Time since Windows boot" FontSize="11" Foreground="#818A97" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Row="1" Grid.Column="0" Background="#1C1F26" CornerRadius="12" Padding="18">
+                            <StackPanel Spacing="7">
+                                <TextBlock Text="Memory used" FontSize="12" Foreground="#A7ADB7" />
+                                <TextBlock x:Name="SensorMemoryUsedValue" Text="—" FontSize="22" FontWeight="SemiBold" Foreground="White" />
+                                <TextBlock Text="Physical memory in use" FontSize="11" Foreground="#818A97" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Row="1" Grid.Column="1" Background="#1C1F26" CornerRadius="12" Padding="18">
+                            <StackPanel Spacing="7">
+                                <TextBlock Text="Memory available" FontSize="12" Foreground="#A7ADB7" />
+                                <TextBlock x:Name="SensorMemoryAvailableValue" Text="—" FontSize="22" FontWeight="SemiBold" Foreground="White" />
+                                <TextBlock Text="Physical memory available" FontSize="11" Foreground="#818A97" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Row="1" Grid.Column="2" Background="#1C1F26" CornerRadius="12" Padding="18">
+                            <StackPanel Spacing="7">
+                                <TextBlock Text="Installed memory" FontSize="12" Foreground="#A7ADB7" />
+                                <TextBlock x:Name="SensorMemoryTotalValue" Text="—" FontSize="22" FontWeight="SemiBold" Foreground="White" />
+                                <TextBlock Text="Total physical RAM" FontSize="11" Foreground="#818A97" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                    <Border Background="#1C1F26" CornerRadius="12" Padding="18">
+                        <StackPanel Spacing="7">
+                            <TextBlock Text="System information" FontSize="15" FontWeight="SemiBold" Foreground="White" />
+                            <TextBlock x:Name="SensorComputerNameValue" Text="Computer name: —" FontSize="12" Foreground="#DFE3E8" />
+                            <TextBlock x:Name="SensorWindowsVersionValue" Text="Windows version: —" FontSize="12" Foreground="#A7ADB7" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
                 <Border x:Name="PlaceholderContent" Background="#1C1F26" CornerRadius="14" Padding="24"
                         Visibility="Collapsed">
                     <StackPanel Spacing="9">

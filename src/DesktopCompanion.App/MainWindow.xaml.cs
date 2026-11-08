@@ -252,7 +252,7 @@ public sealed partial class MainWindow : Window
             _ = CoreWebView2Environment.GetAvailableBrowserVersionString();
 
             var environment = await CoreWebView2Environment.CreateAsync(
-                userDataFolder: _webViewUserDataFolder);
+                null, _webViewUserDataFolder, null);
             await HomeAssistantWebView.EnsureCoreWebView2Async(environment);
 
             var core = HomeAssistantWebView.CoreWebView2;

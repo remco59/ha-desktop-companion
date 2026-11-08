@@ -17,6 +17,8 @@ public sealed partial class MainWindow : Window
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "DesktopCompanion",
         "WebView2");
+    private readonly Dictionary<string, StorageSensorCard> _storageSensorCards = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, NetworkSensorCard> _networkSensorCards = new(StringComparer.Ordinal);
 
     private IReadOnlyList<DashboardDefinition> _dashboards = [DashboardDefinition.Default];
     private DashboardDefinition _selectedDashboard = DashboardDefinition.Default;
@@ -129,6 +131,8 @@ public sealed partial class MainWindow : Window
     {
         DispatcherQueue.TryEnqueue(() =>
         {
+            EnsureAdditionalSensorCards(sample.Sensors);
+
             var cpu = FindReading(sample, "cpu_usage_percent");
             var memory = FindReading(sample, "memory_usage_percent");
             var used = FindReading(sample, "memory_used_bytes");
@@ -172,9 +176,184 @@ public sealed partial class MainWindow : Window
             var windowsVersion = FindReading(sample, "windows_version");
             SensorComputerNameValue.Text = $"Computer name: {hostname?.TextValue ?? "Unavailable"}";
             SensorWindowsVersionValue.Text = $"Windows version: {windowsVersion?.TextValue ?? "Unavailable"}";
+            UpdateStorageCards(sample);
+            UpdateNetworkCards(sample);
             SensorLastUpdatedText.Text = $"Last sample {sample.SampledAt.ToLocalTime():HH:mm:ss} · updates every 2 seconds";
         });
     }
+
+    private void EnsureAdditionalSensorCards(IReadOnlyCollection<SensorDescriptor> sensors)
+    {
+        foreach (var descriptor in sensors)
+        {
+            if (descriptor.Definition.Category == "storage" &&
+                TryGetGroupKey(descriptor.Definition.Id, "storage_", out var storageKey))
+            {
+                if (!_storageSensorCards.ContainsKey(storageKey))
+                    _storageSensorCards.Add(storageKey, CreateStorageSensorCard(descriptor, storageKey));
+            }
+            else if (descriptor.Definition.Category == "network" &&
+                     TryGetGroupKey(descriptor.Definition.Id, "network_", out var networkKey))
+            {
+                if (!_networkSensorCards.ContainsKey(networkKey))
+                    _networkSensorCards.Add(networkKey, CreateNetworkSensorCard(descriptor, networkKey));
+            }
+        }
+
+        StorageSensorSection.Visibility = _storageSensorCards.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        NetworkSensorSection.Visibility = _networkSensorCards.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private StorageSensorCard CreateStorageSensorCard(SensorDescriptor descriptor, string groupKey)
+    {
+        var displayName = GetDisplayName(descriptor.Definition.Name);
+        var title = CreateDynamicSensorText(displayName, 14, true, "#FFFFFF");
+        var status = CreateDynamicSensorText("Status: waiting…", 11, false, "#A7ADB7");
+        var capacity = CreateDynamicSensorText("Capacity: —", 11, false, "#DFE3E8");
+        var used = CreateDynamicSensorText("Used: —", 11, false, "#DFE3E8");
+        var available = CreateDynamicSensorText("Available: —", 11, false, "#DFE3E8");
+        var panel = new StackPanel { Spacing = 5 };
+        panel.Children.Add(title);
+        panel.Children.Add(status);
+        panel.Children.Add(capacity);
+        panel.Children.Add(used);
+        panel.Children.Add(available);
+        StorageSensorCardsPanel.Children.Add(CreateDynamicSensorBorder(panel));
+        return new StorageSensorCard(status, capacity, used, available);
+    }
+
+    private NetworkSensorCard CreateNetworkSensorCard(SensorDescriptor descriptor, string groupKey)
+    {
+        var displayName = GetDisplayName(descriptor.Definition.Name);
+        var title = CreateDynamicSensorText(displayName, 14, true, "#FFFFFF");
+        var status = CreateDynamicSensorText("Status: waiting…", 11, false, "#A7ADB7");
+        var receive = CreateDynamicSensorText("Receive: —", 11, false, "#DFE3E8");
+        var send = CreateDynamicSensorText("Send: —", 11, false, "#DFE3E8");
+        var panel = new StackPanel { Spacing = 5 };
+        panel.Children.Add(title);
+        panel.Children.Add(status);
+        panel.Children.Add(receive);
+        panel.Children.Add(send);
+        NetworkSensorCardsPanel.Children.Add(CreateDynamicSensorBorder(panel));
+        return new NetworkSensorCard(status, receive, send);
+    }
+
+    private void UpdateStorageCards(SensorSample sample)
+    {
+        foreach (var (groupKey, card) in _storageSensorCards)
+        {
+            var statusId = $"{groupKey}_status";
+            var totalId = $"{groupKey}_total_bytes";
+            var usedId = $"{groupKey}_used_bytes";
+            var freeId = $"{groupKey}_free_bytes";
+            var status = FindReading(sample, statusId);
+            card.Status.Text = $"Status: {status?.TextValue ?? GetUnavailableText(sample, statusId)}";
+            card.Capacity.Text = $"Capacity: {FormatBytes(FindReading(sample, totalId), sample.Errors, totalId)}";
+            card.Used.Text = $"Used: {FormatBytes(FindReading(sample, usedId), sample.Errors, usedId)}";
+            card.Available.Text = $"Available: {FormatBytes(FindReading(sample, freeId), sample.Errors, freeId)}";
+        }
+    }
+
+    private void UpdateNetworkCards(SensorSample sample)
+    {
+        foreach (var (groupKey, card) in _networkSensorCards)
+        {
+            var statusId = $"{groupKey}_status";
+            var receiveId = $"{groupKey}_receive_bytes_per_second";
+            var sendId = $"{groupKey}_send_bytes_per_second";
+            var status = FindReading(sample, statusId);
+            card.Status.Text = $"Status: {status?.TextValue ?? GetUnavailableText(sample, statusId)}";
+            card.Receive.Text = $"Receive: {FormatRate(FindReading(sample, receiveId), sample.Errors, receiveId)}";
+            card.Send.Text = $"Send: {FormatRate(FindReading(sample, sendId), sample.Errors, sendId)}";
+        }
+    }
+
+    private static string FormatRate(
+        SensorReading? reading,
+        IReadOnlyDictionary<string, string> errors,
+        string sensorId)
+    {
+        if (reading?.NumericValue is not double value)
+            return errors.ContainsKey(sensorId) ? "Unavailable" : "Warming up…";
+        if (reading.IsStale)
+            return $"Last known · {FormatBytesPerSecond(value)}";
+        return FormatBytesPerSecond(value);
+    }
+
+    private static string FormatBytesPerSecond(double bytesPerSecond)
+    {
+        const double kilobyte = 1024d;
+        if (bytesPerSecond >= kilobyte * kilobyte)
+            return $"{bytesPerSecond / (kilobyte * kilobyte):0.00} MB/s";
+        if (bytesPerSecond >= kilobyte)
+            return $"{bytesPerSecond / kilobyte:0.0} KB/s";
+        return $"{bytesPerSecond:0} B/s";
+    }
+
+    private static string GetUnavailableText(SensorSample sample, string sensorId) =>
+        sample.Errors.TryGetValue(sensorId, out var error) ? $"Unavailable · {error}" : "Not available";
+
+    private static string GetDisplayName(string name)
+    {
+        var separator = name.IndexOf(" — ", StringComparison.Ordinal);
+        return separator < 0 ? name : name[..separator];
+    }
+
+    private static bool TryGetGroupKey(string sensorId, string prefix, out string groupKey)
+    {
+        groupKey = string.Empty;
+        if (!sensorId.StartsWith(prefix, StringComparison.Ordinal))
+            return false;
+
+        var suffixes = prefix == "storage_"
+            ? new[] { "_status", "_total_bytes", "_used_bytes", "_free_bytes" }
+            : new[] { "_status", "_receive_bytes_per_second", "_send_bytes_per_second" };
+
+        foreach (var suffix in suffixes)
+        {
+            if (!sensorId.EndsWith(suffix, StringComparison.Ordinal))
+                continue;
+            groupKey = sensorId[..^suffix.Length];
+            return true;
+        }
+
+        return false;
+    }
+
+    private static TextBlock CreateDynamicSensorText(string text, double fontSize, bool strong, string color) =>
+        new()
+        {
+            Text = text,
+            FontSize = fontSize,
+            FontWeight = strong ? Microsoft.UI.Text.FontWeights.SemiBold : Microsoft.UI.Text.FontWeights.Normal,
+            Foreground = new SolidColorBrush(Color.FromArgb(
+                255,
+                Convert.ToByte(color.Substring(1, 2), 16),
+                Convert.ToByte(color.Substring(3, 2), 16),
+                Convert.ToByte(color.Substring(5, 2), 16))),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+    private static Border CreateDynamicSensorBorder(UIElement content) =>
+        new()
+        {
+            Background = new SolidColorBrush(Color.FromArgb(255, 32, 36, 43)),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(14),
+            Margin = new Thickness(0, 0, 0, 4),
+            Child = content
+        };
+
+    private sealed record StorageSensorCard(
+        TextBlock Status,
+        TextBlock Capacity,
+        TextBlock Used,
+        TextBlock Available);
+
+    private sealed record NetworkSensorCard(
+        TextBlock Status,
+        TextBlock Receive,
+        TextBlock Send);
 
     public void UpdateSensorMonitoringError(string message)
     {

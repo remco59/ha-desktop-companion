@@ -93,7 +93,10 @@ public sealed class WindowsSensorMonitor : IAsyncDisposable
         var sample = new SensorSample(
             DateTimeOffset.UtcNow,
             new Dictionary<string, SensorReading>(_lastReadings, StringComparer.Ordinal),
-            new Dictionary<string, string>(_lastErrors, StringComparer.Ordinal));
+            new Dictionary<string, string>(_lastErrors, StringComparer.Ordinal))
+        {
+            Sensors = _sensors
+        };
         Sampled?.Invoke(sample);
     }
 

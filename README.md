@@ -6,6 +6,10 @@ Desktop Companion brings your Windows PC and smart home together in one approach
 
 > **Project status:** Early preview. The Windows app has a native WinUI 3 shell, system-tray experience, Home Assistant OAuth/WebSocket connection, and an embedded WebView2 host for the real Home Assistant frontend. The embedded dashboard now uses Home Assistant's own UI rather than a parallel native entity-control renderer. Live dashboard sign-in and visual behaviour still need validation on Windows 11.
 
+## Dashboard presentation
+
+The embedded dashboard opens in dashboard-only mode by requesting the Home Assistant Kiosk Mode frontend resource with the `?kiosk` URL parameter. Install [**Kiosk Mode**](https://github.com/NemesisRE/kiosk-mode) through HACS in Home Assistant to hide Home Assistant's own header and navigation while keeping the actual Lovelace dashboard interactive. Without that frontend resource, Home Assistant displays its regular interface. The native Desktop Companion shell remains visible.
+
 ## Product goals
 
 - Control Home Assistant entities, scenes, scripts, and automations from Windows.

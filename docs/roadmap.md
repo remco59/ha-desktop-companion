@@ -54,6 +54,7 @@
 - [x] Embed the actual Home Assistant frontend in a native WinUI 3 window using WebView2.
 - [x] Keep the Home Assistant frontend's cards, entity controls, layouts, and styling intact.
 - [x] Persist the WebView2 profile per Windows user and clear it on explicit disconnect.
+- [x] Request Home Assistant dashboard-only kiosk presentation through the Kiosk Mode `?kiosk` URL parameter.
 - [ ] Add a native dashboard selector that can switch among Home Assistant dashboards/views.
 - [ ] Add a compact tray dashboard surface that hosts selected Home Assistant views.
 - [ ] Add native Windows companion surfaces (system sensors, media, quick actions) around the embedded Home Assistant dashboard.

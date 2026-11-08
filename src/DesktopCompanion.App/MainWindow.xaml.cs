@@ -216,7 +216,7 @@ public sealed partial class MainWindow : Window
 
             await EnsureDashboardWebViewAsync();
 
-            var target = _dashboardUri.AbsoluteUri;
+            var target = AddKioskModeParameter(_dashboardUri).AbsoluteUri;
             _lastNavigatedDashboardUri = _dashboardUri;
             DashboardStatusText.Text = "Loading your Home Assistant dashboard…";
             HomeAssistantWebView.CoreWebView2.Navigate(target);
@@ -354,6 +354,39 @@ public sealed partial class MainWindow : Window
         DashboardStatusText.Text = "Ready to load your Home Assistant dashboard";
     }
 
+    /// <summary>
+    /// Requests a dashboard-only presentation from the Home Assistant Kiosk Mode
+    /// frontend resource. If that resource is not installed, Home Assistant simply
+    /// ignores the query parameter and renders its regular frontend.
+    /// </summary>
+    private static Uri AddKioskModeParameter(Uri dashboardUri)
+    {
+        var builder = new UriBuilder(dashboardUri);
+        var query = builder.Query.TrimStart('?');
+        var parameters = query.Split('&', StringSplitOptions.RemoveEmptyEntries);
+
+        var hasKioskParameter = parameters.Any(parameter =>
+            string.Equals(
+                Uri.UnescapeDataString(parameter.Split('=', 2)[0]),
+                "kiosk",
+                StringComparison.OrdinalIgnoreCase));
+
+        // Respect an explicit opt-out included in the configured instance URL.
+        var hasKioskModeOptOut = parameters.Any(parameter =>
+            string.Equals(
+                Uri.UnescapeDataString(parameter.Split('=', 2)[0]),
+                "disable_km",
+                StringComparison.OrdinalIgnoreCase));
+
+        if (hasKioskParameter || hasKioskModeOptOut)
+        {
+            return dashboardUri;
+        }
+
+        builder.Query = string.IsNullOrEmpty(query) ? "kiosk" : $"{query}&kiosk";
+        return builder.Uri;
+    }
+
     private static Uri EnsureTrailingSlash(Uri uri)
     {
         var absolute = uri.AbsoluteUri;
@@ -388,7 +421,7 @@ public sealed partial class MainWindow : Window
         {
             "Overview" => "Your PC and Home Assistant, in one place.",
             "Home Assistant" => "Connection and account settings for your smart home.",
-            "Dashboard" => "The actual Home Assistant interface, embedded in your Windows app.",
+            "Dashboard" => "Your Home Assistant dashboard, without its navigation chrome.",
             "Sensors" => "Discover and configure Windows telemetry.",
             "Actions" => "Build actions that work across Windows and Home Assistant.",
             "Applications & Media" => "Manage your applications and media controls.",

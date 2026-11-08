@@ -28,7 +28,6 @@ public sealed partial class TrayPopupWindow : Window
         UpdateUptime();
 
         Activated += OnWindowActivated;
-        RootGrid.Loaded += (_, _) => RootGrid.Focus(FocusState.Programmatic);
     }
 
     public void ToggleNearCursor()
@@ -68,6 +67,7 @@ public sealed partial class TrayPopupWindow : Window
             displayArea);
         AppWindow.Show();
         Activate();
+        OpenDashboardButton.Focus(FocusState.Programmatic);
     }
 
     private void UpdateUptime()

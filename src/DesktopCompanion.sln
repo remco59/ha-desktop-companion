@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopCompanion.Windows", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopCompanion.App", "DesktopCompanion.App\DesktopCompanion.App.csproj", "{12A1D4C1-1CB2-4D27-8E7D-716B812C2A04}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopCompanion.Tests", "DesktopCompanion.Tests\DesktopCompanion.Tests.csproj", "{82A62D3B-AF76-4F57-A7B4-123A540A3B19}"
+EndProject
 Global
   GlobalSection(SolutionConfigurationPlatforms) = preSolution
     Debug|x64 = Debug|x64
@@ -32,5 +34,9 @@ Global
     {12A1D4C1-1CB2-4D27-8E7D-716B812C2A04}.Debug|x64.Build.0 = Debug|x64
     {12A1D4C1-1CB2-4D27-8E7D-716B812C2A04}.Release|x64.ActiveCfg = Release|x64
     {12A1D4C1-1CB2-4D27-8E7D-716B812C2A04}.Release|x64.Build.0 = Release|x64
+    {82A62D3B-AF76-4F57-A7B4-123A540A3B19}.Debug|x64.ActiveCfg = Debug|Any CPU
+    {82A62D3B-AF76-4F57-A7B4-123A540A3B19}.Debug|x64.Build.0 = Debug|Any CPU
+    {82A62D3B-AF76-4F57-A7B4-123A540A3B19}.Release|x64.ActiveCfg = Release|Any CPU
+    {82A62D3B-AF76-4F57-A7B4-123A540A3B19}.Release|x64.Build.0 = Release|Any CPU
   EndGlobalSection
 EndGlobal

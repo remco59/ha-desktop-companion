@@ -77,6 +77,7 @@ These are decisions, not open brainstorming topics. Any change should be propose
 - Respect an explicit `disable_km` opt-out.
 - The Kiosk Mode frontend resource must be installed in Home Assistant through HACS. Without it, Home Assistant displays its normal frontend chrome.
 - Dashboard selection should navigate to Home Assistant dashboard/view URLs; do not query dashboard configuration and redraw it natively.
+- The initial Desktop Companion dashboard presets are Control (`desktop-companion/control`), Media (`desktop-companion/media`), and System (`desktop-companion/system`), with Control as the default.
 
 ### Connectivity and security
 
@@ -117,7 +118,8 @@ This section separates implemented work from user-verified behaviour and remaini
 - WebView2 hosts the real Home Assistant frontend with a persistent, dedicated browser profile.
 - Explicit Disconnect clears the native credentials and the dedicated WebView2 profile.
 - Kiosk Mode `?kiosk` dashboard presentation is implemented.
-- Windows CI and Windows package/installer workflows build successfully.
+- The native dashboard selector, remembered selection, and safe relative URL composition are implemented in open PR #18; its initial presets match the three confirmed Home Assistant views (Control, Media, System).
+- Windows CI for the latest PR #18 head passed; live dashboard switching and restart persistence still require Windows 11 acceptance.
 
 ### User-verified on Windows 11 — 2026-11-08
 
@@ -132,6 +134,7 @@ Treat this as the current accepted baseline. Do not re-open the decision to embe
 
 - Installer in-place upgrade behaviour has not yet been confirmed by a clean upgrade test. PR #14 changes the Inno Setup file handling and process detection; CI packaging success is not proof of a successful upgrade on a real Windows machine.
 - A full single-instance activation handoff is missing.
+- Dashboard definitions and last-selected dashboard ID are persisted in the existing non-secret settings document; broader SQLite-backed settings remain a later milestone. The first-run preset list is Control, Media, and System for the Desktop Companion dashboard.
 - The Sensors, Actions, Applications & Media, and Notifications areas are still placeholders.
 - The Windows sensor provider is only a small scaffold (uptime, computer name, Windows version).
 - The Home Assistant custom integration is a config-flow scaffold; it does not yet pair a PC or create telemetry entities.
@@ -168,13 +171,14 @@ Acceptance:
 
 **Goal:** Make the accepted dashboard-only WebView feel intentionally integrated into Desktop Companion.
 
+Current implementation note (2026-11-08): the native selector, default/last-selected state, URL composition, and unit-test coverage are being delivered on `feat/native-dashboard-selector`. Code completion and CI do not replace live Windows/Home Assistant validation.
+
 Work:
-- Add a native dashboard selector for available Home Assistant dashboards/views.
-- Start with a simple configuration model: friendly display name + Home Assistant path/URL + optional icon.
-- Include a sensible default (the Home Assistant default dashboard) and remember the last selected dashboard.
+- Add a native dashboard selector backed by typed dashboard definitions (friendly display name, relative path, optional icon, sort order, default marker).
+- Include a default dashboard and remember the last selected dashboard ID in non-secret application settings.
 - Navigate the existing WebView2 instance to the selected Home Assistant path, preserving the configured reverse-proxy prefix and Kiosk Mode parameter.
-- Add loading, offline, navigation-failure, and reconnect states that do not destroy the persisted browser session.
-- Add a clear way to return to the default dashboard.
+- Surface dashboard navigation/loading errors without clearing the persistent browser session.
+- Provide a clear way to return to the default dashboard.
 - Keep refresh and Open in browser actions; ensure Open in browser opens the currently selected dashboard.
 - Consider per-dashboard kiosk preferences only if there is a real use case; default remains dashboard-only.
 
@@ -356,7 +360,7 @@ The next work should be selected from this order unless new user feedback change
 |---|---|---|---|
 | P0 | Finish review of the current dashboard/installer PR stack | Keep the verified preview stable | User approval to merge |
 | P0 | Real in-place installer upgrade test | Previous installer failures were user-visible | PR #14 candidate build |
-| P1 | Native dashboard selector and remembered view | Natural continuation of the accepted dashboard experience | Current WebView2 host |
+| P1 | Validate native dashboard selector and remembered view (PR #18) on Windows | Confirm the new three-view workflow end-to-end | Current WebView2 host and live HA instance |
 | P1 | Automated tests for dashboard URL/path/query handling | Protect reverse-proxy and Kiosk Mode behaviour | Test project |
 | P1 | CPU/memory/storage/network sensor vertical slice | First differentiated native Windows feature | Sensor provider service |
 | P1 | Telemetry protocol ADR | Required before publishing Windows entities to HA | Sensor model and security review |
@@ -368,18 +372,9 @@ The next work should be selected from this order unless new user feedback change
 
 ### Immediate next implementation slice
 
-After the current PR stack is reviewed/merged with the user's explicit approval:
+The native dashboard selector is implemented in open PR #18. Its initial presets are the three confirmed Home Assistant views (Control, Media, System), with Control as the default. The latest Windows CI run passed, but live switching, reconnect behaviour, and selection persistence still need to be verified on Windows 11 before the PR is considered accepted.
 
-**Build the native dashboard selector as one vertical slice.**
-
-It should include:
-- A small dashboard definition model (friendly name, path, optional icon, sort order).
-- A native selector in the Dashboard page.
-- Default and last-selected dashboard behaviour.
-- URL composition tests for base paths, reverse proxies, existing query parameters, Kiosk Mode, and opt-out.
-- No native recreation of HA dashboard cards or dashboard configuration APIs unless required to discover dashboard paths safely.
-
-Then move to the first Windows sensor vertical slice (CPU + memory + uptime), before designing telemetry publication.
+After that acceptance and explicit merge approval, move to the first Windows sensor vertical slice (CPU + memory + uptime), before designing telemetry publication.
 
 ---
 
@@ -413,7 +408,8 @@ At the start of a new session:
 At the time of writing:
 
 - Default branch is `main`.
-- PR #14 — [installer upgrade handling](https://github.com/remco59/ha-desktop-companion/pull/14) — draft, not merged. It contains the `replacesameversion` and targeted forced-close/filter changes. CI packaging passed for the recorded head; real in-place upgrade acceptance remains outstanding.
-- PR #15 — [dashboard-only Kiosk Mode](https://github.com/remco59/ha-desktop-companion/pull/15) — draft, not merged. It is stacked on the installer-fix branch. Windows CI and Windows packaging passed for the recorded head. The user installed it and confirmed the Home Assistant header/sidebar are hidden while the dashboard remains visible and interactive.
-- Keep the PR stack intact until reviewed. The documentation handoff PR may be stacked on PR #15; do not merge or rebase the stack without checking current GitHub state.
+- The integrated baseline is `main` at `5740d72dba1a9e2a496abd11661b43835e1587c3`. GitHub showed no open pull requests during the 2026-11-08 review; the earlier PR #14/#15 stack references above this handoff are historical and have been integrated.
+- Windows CI for the current main commit passed in run [#42522021504](https://github.com/remco59/ha-desktop-companion/actions/runs/42522021504). Windows Package also passed for the preceding dashboard PR head [#42521816660](https://github.com/remco59/ha-desktop-companion/actions/runs/42521816660).
+- Real in-place installer upgrade acceptance remains outstanding and must stay visible until tested on Windows.
+- PR #18 — [native Home Assistant dashboard selector](https://github.com/remco59/ha-desktop-companion/pull/18) — open draft on `feat/native-dashboard-selector`. Latest Windows CI passed. It includes Control, Media, and System presets; live Windows/Home Assistant validation remains outstanding. Do not merge without explicit user permission.
 - The current project plan is documentation, not permission to merge, release, or change production Home Assistant configuration.

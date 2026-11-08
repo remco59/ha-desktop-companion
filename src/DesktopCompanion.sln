@@ -1,0 +1,36 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopCompanion.Core", "DesktopCompanion.Core\DesktopCompanion.Core.csproj", "{12A1D4C1-1CB2-4D27-8E7D-716B812C2A01}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopCompanion.HomeAssistant", "DesktopCompanion.HomeAssistant\DesktopCompanion.HomeAssistant.csproj", "{12A1D4C1-1CB2-4D27-8E7D-716B812C2A02}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopCompanion.Windows", "DesktopCompanion.Windows\DesktopCompanion.Windows.csproj", "{12A1D4C1-1CB2-4D27-8E7D-716B812C2A03}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopCompanion.App", "DesktopCompanion.App\DesktopCompanion.App.csproj", "{12A1D4C1-1CB2-4D27-8E7D-716B812C2A04}"
+EndProject
+Global
+  GlobalSection(SolutionConfigurationPlatforms) = preSolution
+    Debug|x64 = Debug|x64
+    Release|x64 = Release|x64
+  EndGlobalSection
+  GlobalSection(ProjectConfigurationPlatforms) = postSolution
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A01}.Debug|x64.ActiveCfg = Debug|Any CPU
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A01}.Debug|x64.Build.0 = Debug|Any CPU
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A01}.Release|x64.ActiveCfg = Release|Any CPU
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A01}.Release|x64.Build.0 = Release|Any CPU
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A02}.Debug|x64.ActiveCfg = Debug|Any CPU
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A02}.Debug|x64.Build.0 = Debug|Any CPU
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A02}.Release|x64.ActiveCfg = Release|Any CPU
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A02}.Release|x64.Build.0 = Release|Any CPU
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A03}.Debug|x64.ActiveCfg = Debug|Any CPU
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A03}.Debug|x64.Build.0 = Debug|Any CPU
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A03}.Release|x64.ActiveCfg = Release|Any CPU
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A03}.Release|x64.Build.0 = Release|Any CPU
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A04}.Debug|x64.ActiveCfg = Debug|x64
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A04}.Debug|x64.Build.0 = Debug|x64
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A04}.Release|x64.ActiveCfg = Release|x64
+    {12A1D4C1-1CB2-4D27-8E7D-716B812C2A04}.Release|x64.Build.0 = Release|x64
+  EndGlobalSection
+EndGlobal

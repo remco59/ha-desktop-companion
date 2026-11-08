@@ -26,8 +26,11 @@ public sealed partial class MainWindow : Window
     public event Action<Uri>? ConnectHomeAssistantRequested;
     public event Action? DisconnectHomeAssistantRequested;
     public event Action? RefreshEntitiesRequested;
+    public event Action<string>? ToggleEntityRequested;
 
     public void SetHomeAssistantUrl(string url) => HomeAssistantUrlInput.Text = url;
+
+    public void SetEntityActionFeedback(string message) => DispatcherQueue.TryEnqueue(() => EntityActionFeedback.Text = message);
 
     public void UpdateEntities(IReadOnlyList<HomeAssistantEntity> entities, string? message = null)
     {
@@ -108,6 +111,11 @@ public sealed partial class MainWindow : Window
         DisconnectHomeAssistantRequested?.Invoke();
 
     private void OnRefreshEntitiesClicked(object sender, RoutedEventArgs e) => RefreshEntitiesRequested?.Invoke();
+
+    private void OnToggleEntityClicked(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string entityId }) ToggleEntityRequested?.Invoke(entityId);
+    }
 
     private void OnEntitySearchChanged(object sender, TextChangedEventArgs e) => ApplyEntityFilter();
 

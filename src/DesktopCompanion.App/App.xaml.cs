@@ -35,6 +35,7 @@ public partial class App : Application
         _mainWindow.ConnectHomeAssistantRequested += OnConnectHomeAssistantRequested;
         _mainWindow.DisconnectHomeAssistantRequested += OnDisconnectHomeAssistantRequested;
         _mainWindow.RefreshEntitiesRequested += OnRefreshEntitiesRequested;
+        _mainWindow.ToggleEntityRequested += OnToggleEntityRequested;
 
         var savedUrl = AppSettingsStore.LoadHomeAssistantUrl();
         if (!string.IsNullOrWhiteSpace(savedUrl))
@@ -136,6 +137,36 @@ public partial class App : Application
     private async void OnDisconnectHomeAssistantRequested() => await DisconnectHomeAssistantAsync();
 
     private async void OnRefreshEntitiesRequested() => await RefreshEntitiesAsync();
+
+    private async void OnToggleEntityRequested(string entityId) => await ToggleEntityAsync(entityId);
+
+    private async Task ToggleEntityAsync(string entityId)
+    {
+        if (_mainWindow is null || _tokenProvider is null || _homeAssistantClient is null || _connectedInstance is null) return;
+        var separator = entityId.IndexOf('.');
+        if (separator <= 0) return;
+        var domain = entityId[..separator];
+        if (domain is not ("light" or "switch" or "input_boolean" or "fan" or "automation"))
+        {
+            _mainWindow.SetEntityActionFeedback($"Toggle is not supported for {domain} entities.");
+            return;
+        }
+
+        try
+        {
+            _mainWindow.SetEntityActionFeedback($"Sending toggle command to {entityId}…");
+            var token = await _tokenProvider.GetAccessTokenAsync();
+            await _homeAssistantClient.CallServiceAsync(
+                _connectedInstance, token, domain, "toggle",
+                new Dictionary<string, object?> { ["entity_id"] = entityId });
+            await RefreshEntitiesAsync();
+            _mainWindow.SetEntityActionFeedback($"Toggle command sent to {entityId}.");
+        }
+        catch (Exception exception)
+        {
+            _mainWindow.SetEntityActionFeedback($"Could not control {entityId}: {exception.Message}");
+        }
+    }
 
     private async Task RefreshEntitiesAsync()
     {

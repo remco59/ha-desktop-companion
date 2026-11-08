@@ -213,6 +213,7 @@
                                             Background="#282E48" Foreground="#D8DBEA" BorderThickness="0"
                                             CornerRadius="8" Padding="12,7" />
                                 </Grid>
+                                <TextBlock x:Name="EntityActionFeedback" Text="" Foreground="#A5AAC4" FontSize="11" TextWrapping="Wrap" />
                                 <TextBox x:Name="EntitySearchInput" PlaceholderText="Search by name, entity ID or domain…"
                                          TextChanged="OnEntitySearchChanged"
                                          Background="#1A2038" Foreground="White" BorderBrush="#39415F"
@@ -229,6 +230,7 @@
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
                                                     <StackPanel Spacing="3">
                                                         <TextBlock Text="{Binding FriendlyName}" Foreground="White"
@@ -240,6 +242,10 @@
                                                             Padding="8,5" VerticalAlignment="Center">
                                                         <TextBlock Text="{Binding State}" Foreground="#D8DBEA" FontSize="10" />
                                                     </Border>
+                                                    <Button Grid.Column="2" Content="Toggle" Tag="{Binding EntityId}"
+                                                            IsEnabled="{Binding CanToggle}" Click="OnToggleEntityClicked"
+                                                            Background="#30254E" Foreground="White" BorderThickness="0"
+                                                            CornerRadius="6" Padding="10,6" VerticalAlignment="Center" />
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>

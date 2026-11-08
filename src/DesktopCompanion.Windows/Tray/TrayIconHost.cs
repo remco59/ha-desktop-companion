@@ -13,7 +13,6 @@ public sealed class TrayIconHost : IDisposable
 {
     private const string WindowClassName = "DesktopCompanion.TrayCallbackWindow";
     private const uint CallbackMessage = 0x8000 + 0x41;
-    private const uint TaskbarCreatedMessageFallback = 0xC001;
 
     private const uint NimAdd = 0x00000000;
     private const uint NimDelete = 0x00000002;
@@ -95,7 +94,16 @@ public sealed class TrayIconHost : IDisposable
             throw new InvalidOperationException("A tray callback window with this handle already exists.");
         }
 
-        AddIcon(tooltip);
+        try
+        {
+            AddIcon(tooltip);
+        }
+        catch
+        {
+            Hosts.TryRemove(_windowHandle, out _);
+            _ = DestroyWindow(_windowHandle);
+            throw;
+        }
     }
 
     private void AddIcon(string tooltip = "Desktop Companion")
@@ -299,7 +307,7 @@ public sealed class TrayIconHost : IDisposable
         }
     }
 
-    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
     private static extern ushort RegisterClassExW(ref WindowClassEx windowClass);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -327,13 +335,13 @@ public sealed class TrayIconHost : IDisposable
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern uint RegisterWindowMessageW(string message);
 
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
     private static extern IntPtr GetModuleHandleW(string? moduleName);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern IntPtr LoadIconW(IntPtr instance, IntPtr iconName);
 
-    [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool Shell_NotifyIconW(uint message, ref NotifyIconData data);
 }

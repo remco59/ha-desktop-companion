@@ -44,6 +44,8 @@ public sealed partial class MainWindow : Window
         DispatcherQueue.TryEnqueue(() =>
         {
             ConnectionStatusTitle.Text = title;
+            OverviewConnectionTitle.Text = title;
+            OverviewConnectionDetail.Text = detail;
             ConnectionStatusDetail.Text = detail;
             ConnectionStatusDot.Fill = new SolidColorBrush(
                 connected ? Color.FromArgb(255, 98, 214, 174) :

@@ -80,10 +80,10 @@
                         <StackPanel Spacing="5">
                             <TextBlock Text="HOME ASSISTANT" FontSize="9" CharacterSpacing="80" Foreground="#969BB7" />
                             <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                <Ellipse Width="7" Height="7" Fill="#E1A64C" />
-                                <TextBlock Text="Not connected" FontSize="12" FontWeight="SemiBold" Foreground="White" />
+                                <Ellipse x:Name="HomeAssistantStatusDot" Width="7" Height="7" Fill="#E1A64C" />
+                                <TextBlock x:Name="HomeAssistantStatusText" Text="Not connected" FontSize="12" FontWeight="SemiBold" Foreground="White" />
                             </StackPanel>
-                            <TextBlock Text="Connect in the app" FontSize="10" Foreground="#8D92AD" />
+                            <TextBlock x:Name="HomeAssistantStatusDetail" Text="Connect in the app" FontSize="10" Foreground="#8D92AD" />
                         </StackPanel>
                     </Border>
                 </Grid>

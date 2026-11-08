@@ -62,6 +62,9 @@ public partial class App : Application
             authenticate ? "Complete the approval in your browser. This window will update when you return." : "Refreshing your saved Home Assistant session.",
             false,
             busy: true);
+        _trayPopupWindow?.UpdateHomeAssistantStatus(
+            authenticate ? "Signing in…" : "Connecting…",
+            "Home Assistant", false, busy: true);
 
         try
         {
@@ -80,8 +83,7 @@ public partial class App : Application
             _connectionSupervisor.StateChanged += (_, state) =>
             {
                 var connected = state.Status == HomeAssistantConnectionStatus.Connected;
-                _mainWindow?.UpdateConnectionStatus(
-                    state.Status switch
+                var statusTitle = state.Status switch
                     {
                         HomeAssistantConnectionStatus.Connected => "Connected",
                         HomeAssistantConnectionStatus.Connecting => "Connecting",
@@ -89,10 +91,11 @@ public partial class App : Application
                         HomeAssistantConnectionStatus.AuthenticationRequired => "Sign-in required",
                         HomeAssistantConnectionStatus.Faulted => "Connection error",
                         _ => "Disconnected"
-                    },
-                    state.Message ?? "Home Assistant is not connected.",
-                    connected,
-                    busy: state.Status is HomeAssistantConnectionStatus.Connecting or HomeAssistantConnectionStatus.Reconnecting);
+                    };
+                var statusDetail = state.Message ?? "Home Assistant is not connected.";
+                var isBusy = state.Status is HomeAssistantConnectionStatus.Connecting or HomeAssistantConnectionStatus.Reconnecting;
+                _mainWindow?.UpdateConnectionStatus(statusTitle, statusDetail, connected, busy: isBusy);
+                _trayPopupWindow?.UpdateHomeAssistantStatus(statusTitle, statusDetail, connected, busy: isBusy);
             };
 
             await _connectionSupervisor.StartAsync(instanceUri, _tokenProvider.GetAccessTokenAsync);
@@ -100,11 +103,13 @@ public partial class App : Application
         catch (OperationCanceledException)
         {
             _mainWindow.UpdateConnectionStatus("Sign-in cancelled", "You can try connecting again at any time.", false);
+            _trayPopupWindow?.UpdateHomeAssistantStatus("Not connected", "Connect in the app", false);
             await StopHomeAssistantAsync();
         }
         catch (Exception exception)
         {
             _mainWindow.UpdateConnectionStatus("Could not connect", exception.Message, false);
+            _trayPopupWindow?.UpdateHomeAssistantStatus("Could not connect", exception.Message, false);
             await StopHomeAssistantAsync();
         }
     }
@@ -129,6 +134,7 @@ public partial class App : Application
         _connectedInstance = null;
         AppSettingsStore.SaveHomeAssistantUrl(string.Empty);
         _mainWindow?.UpdateConnectionStatus("Disconnected", "The saved Home Assistant sign-in has been removed from this PC.", false);
+        _trayPopupWindow?.UpdateHomeAssistantStatus("Not connected", "Connect in the app", false);
     }
 
     private async Task StopHomeAssistantAsync(bool clearCredentials = false)

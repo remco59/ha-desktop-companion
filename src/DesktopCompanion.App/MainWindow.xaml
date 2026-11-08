@@ -87,8 +87,8 @@
                         <Border Grid.Column="1" Background="#1A1E34" CornerRadius="12" Padding="16">
                             <StackPanel Spacing="5">
                                 <TextBlock Text="HOME ASSISTANT" FontSize="10" CharacterSpacing="100" Foreground="#A5AAC4" />
-                                <TextBlock Text="Not connected" FontSize="15" FontWeight="SemiBold" Foreground="White" />
-                                <TextBlock Text="Connect an instance to discover your entities." FontSize="12" Foreground="#A5AAC4" />
+                                <TextBlock x:Name="OverviewConnectionTitle" Text="Not connected" FontSize="15" FontWeight="SemiBold" Foreground="White" />
+                                <TextBlock x:Name="OverviewConnectionDetail" Text="Connect an instance to discover your entities." FontSize="12" Foreground="#A5AAC4" />
                             </StackPanel>
                         </Border>
                     </Grid>

@@ -242,7 +242,6 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>on Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Spacing="3" VerticalAlignment="Center">
                             <TextBlock Text="Home Assistant dashboard" FontSize="15" FontWeight="SemiBold" Foreground="White" />

@@ -70,5 +70,6 @@
 - [ ] Hardware compatibility matrix.
 - [ ] Security review.
 - [ ] Performance and reconnect tests.
-- [ ] Installer, upgrade, and uninstall validation.
+- [x] Add an initial per-user Windows installer packaging pipeline.
+- [ ] Installer execution, upgrade, and uninstall validation.
 - [ ] Documentation and v1.0 release.

@@ -11,6 +11,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant
+from homeassistant.const import Platform
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
@@ -19,7 +20,6 @@ from .const import (
     MAX_DEVICES,
     MAX_SENSORS_PER_DEVICE,
     MIN_PUBLISH_INTERVAL_SECONDS,
-    PLATFORMS,
     SIGNAL_SENSOR_CATALOG,
     SIGNAL_SENSOR_REMOVED,
     SIGNAL_SENSOR_UPDATED,
@@ -60,12 +60,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
     """Set up the integration and sensor platform."""
     runtime = IntegrationRuntime.from_entry(entry)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = runtime
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: config_entries.ConfigEntry) -> bool:
     """Unload the integration."""
-    if not await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+    if not await hass.config_entries.async_unload_platforms(entry, [Platform.SENSOR]):
         return False
     hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
     return True

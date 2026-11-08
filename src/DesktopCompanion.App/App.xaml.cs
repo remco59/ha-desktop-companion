@@ -135,12 +135,25 @@ public partial class App : Application
     private async Task DisconnectHomeAssistantAsync()
     {
         await StopHomeAssistantAsync(clearCredentials: true);
+        string? browserSessionWarning = null;
+        try
+        {
+            if (_mainWindow is not null)
+            {
+                await _mainWindow.ClearDashboardSessionAsync();
+            }
+        }
+        catch (Exception exception)
+        {
+            browserSessionWarning = $" The embedded browser session could not be cleared: {exception.Message}";
+        }
+
         _connectedInstance = null;
         AppSettingsStore.SaveHomeAssistantUrl(string.Empty);
         _mainWindow?.SetDashboardUri(null);
         _mainWindow?.UpdateConnectionStatus(
             "Disconnected",
-            "The native Home Assistant connection and saved sign-in have been removed from this PC.",
+            "The native Home Assistant connection and saved sign-in have been removed from this PC." + browserSessionWarning,
             connected: false);
         _trayPopupWindow?.UpdateHomeAssistantStatus("Not connected", "Connect in the app", connected: false);
     }

@@ -1,4 +1,5 @@
 using DesktopCompanion.Core.Models;
+using System.Linq;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
@@ -12,6 +13,8 @@ namespace DesktopCompanion.App;
 public sealed partial class MainWindow : Window
 {
     private bool _allowClose;
+    private IReadOnlyList<HomeAssistantEntity> _entities = Array.Empty<HomeAssistantEntity>();
+    private string? _entityLoadMessage;
 
     public MainWindow()
     {
@@ -22,8 +25,19 @@ public sealed partial class MainWindow : Window
 
     public event Action<Uri>? ConnectHomeAssistantRequested;
     public event Action? DisconnectHomeAssistantRequested;
+    public event Action? RefreshEntitiesRequested;
 
     public void SetHomeAssistantUrl(string url) => HomeAssistantUrlInput.Text = url;
+
+    public void UpdateEntities(IReadOnlyList<HomeAssistantEntity> entities, string? message = null)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            _entities = entities;
+            _entityLoadMessage = message;
+            ApplyEntityFilter();
+        });
+    }
 
     public void ShowFromTray()
     {
@@ -92,6 +106,41 @@ public sealed partial class MainWindow : Window
 
     private void OnDisconnectHomeAssistantClicked(object sender, RoutedEventArgs e) =>
         DisconnectHomeAssistantRequested?.Invoke();
+
+    private void OnRefreshEntitiesClicked(object sender, RoutedEventArgs e) => RefreshEntitiesRequested?.Invoke();
+
+    private void OnEntitySearchChanged(object sender, TextChangedEventArgs e) => ApplyEntityFilter();
+
+    private void ApplyEntityFilter()
+    {
+        var query = EntitySearchInput.Text?.Trim() ?? string.Empty;
+        var filtered = string.IsNullOrEmpty(query)
+            ? _entities
+            : _entities.Where(entity =>
+                entity.EntityId.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                (entity.FriendlyName?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (entity.Domain?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false)).ToArray();
+
+        EntityListView.ItemsSource = filtered;
+        EntityCountText.Text = filtered.Count == _entities.Count
+            ? $"{_entities.Count} entities"
+            : $"{filtered.Count} of {_entities.Count} entities";
+
+        if (_entities.Count == 0)
+        {
+            EntityEmptyText.Text = _entityLoadMessage ?? "No entities were returned by Home Assistant.";
+            EntityEmptyText.Visibility = Visibility.Visible;
+        }
+        else if (filtered.Count == 0)
+        {
+            EntityEmptyText.Text = "No entities match your search.";
+            EntityEmptyText.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            EntityEmptyText.Visibility = Visibility.Collapsed;
+        }
+    }
 
     private void NavigateTo(string page)
     {

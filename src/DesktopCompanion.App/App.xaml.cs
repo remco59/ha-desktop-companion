@@ -1,4 +1,6 @@
 using DesktopCompanion.Core.Models;
+using DesktopCompanion.Core.Abstractions;
+using DesktopCompanion.HomeAssistant.Rest;
 using DesktopCompanion.HomeAssistant.Authentication;
 using DesktopCompanion.HomeAssistant.Services;
 using DesktopCompanion.HomeAssistant.WebSocket;
@@ -15,6 +17,7 @@ public partial class App : Application
     private TrayIconHost? _trayIconHost;
     private HomeAssistantTokenProvider? _tokenProvider;
     private HomeAssistantConnectionSupervisor? _connectionSupervisor;
+    private IHomeAssistantClient? _homeAssistantClient;
     private Uri? _connectedInstance;
     private bool _isExiting;
 
@@ -31,6 +34,7 @@ public partial class App : Application
         _mainWindow = new MainWindow();
         _mainWindow.ConnectHomeAssistantRequested += OnConnectHomeAssistantRequested;
         _mainWindow.DisconnectHomeAssistantRequested += OnDisconnectHomeAssistantRequested;
+        _mainWindow.RefreshEntitiesRequested += OnRefreshEntitiesRequested;
 
         var savedUrl = AppSettingsStore.LoadHomeAssistantUrl();
         if (!string.IsNullOrWhiteSpace(savedUrl))
@@ -79,6 +83,7 @@ public partial class App : Application
             _connectedInstance = instanceUri;
             AppSettingsStore.SaveHomeAssistantUrl(instanceUri.AbsoluteUri);
 
+            _homeAssistantClient = new HomeAssistantRestClient(new HttpClient());
             _connectionSupervisor = new HomeAssistantConnectionSupervisor(new HomeAssistantWebSocketClient());
             _connectionSupervisor.StateChanged += (_, state) =>
             {
@@ -96,9 +101,11 @@ public partial class App : Application
                 var isBusy = state.Status is HomeAssistantConnectionStatus.Connecting or HomeAssistantConnectionStatus.Reconnecting;
                 _mainWindow?.UpdateConnectionStatus(statusTitle, statusDetail, connected, busy: isBusy);
                 _trayPopupWindow?.UpdateHomeAssistantStatus(statusTitle, statusDetail, connected, busy: isBusy);
+                if (connected) _ = RefreshEntitiesAsync();
             };
 
             await _connectionSupervisor.StartAsync(instanceUri, _tokenProvider.GetAccessTokenAsync);
+            _ = RefreshEntitiesAsync();
         }
         catch (OperationCanceledException)
         {
@@ -128,6 +135,32 @@ public partial class App : Application
 
     private async void OnDisconnectHomeAssistantRequested() => await DisconnectHomeAssistantAsync();
 
+    private async void OnRefreshEntitiesRequested() => await RefreshEntitiesAsync();
+
+    private async Task RefreshEntitiesAsync()
+    {
+        if (_mainWindow is null || _tokenProvider is null || _homeAssistantClient is null || _connectedInstance is null)
+        {
+            _mainWindow?.UpdateEntities(Array.Empty<HomeAssistantEntity>(), "Connect Home Assistant to discover your entities.");
+            return;
+        }
+
+        try
+        {
+            var token = await _tokenProvider.GetAccessTokenAsync();
+            var entities = await _homeAssistantClient.GetEntitiesAsync(_connectedInstance, token);
+            _mainWindow.UpdateEntities(entities);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _mainWindow.UpdateEntities(Array.Empty<HomeAssistantEntity>(), "Sign in to Home Assistant to load entities.");
+        }
+        catch (Exception exception)
+        {
+            _mainWindow.UpdateEntities(Array.Empty<HomeAssistantEntity>(), $"Could not load entities: {exception.Message}");
+        }
+    }
+
     private async Task DisconnectHomeAssistantAsync()
     {
         await StopHomeAssistantAsync(clearCredentials: true);
@@ -144,6 +177,12 @@ public partial class App : Application
             await _connectionSupervisor.StopAsync();
             await _connectionSupervisor.DisposeAsync();
             _connectionSupervisor = null;
+        }
+
+        if (_homeAssistantClient is IDisposable restClientDisposable)
+        {
+            restClientDisposable.Dispose();
+            _homeAssistantClient = null;
         }
 
         if (_tokenProvider is not null)

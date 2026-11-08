@@ -3,8 +3,8 @@
 The detailed product vision, architecture constraints, acceptance criteria, priorities, and development handoff live in **[Product Plan & Development Handoff](product-plan.md)**. Read that document before starting a new implementation session.
 
 Status legend:
-- \`[x]\` implemented and/or verified as explicitly described.
-- \`[ ]\` not yet complete or not yet acceptance-tested.
+- `[x]` implemented and/or verified as explicitly described.
+- `[ ]` not yet complete or not yet acceptance-tested.
 - Code complete and CI green does not automatically mean real-Windows acceptance is complete.
 
 ## Phase 0 — Stabilise the accepted preview
@@ -16,7 +16,7 @@ Status legend:
 - [x] Connection supervisor with reconnect/backoff and status events.
 - [x] Embed the real Home Assistant frontend with WebView2 and a persistent, dedicated browser profile.
 - [x] Keep native OAuth credentials separate from the embedded browser session.
-- [x] Dashboard-only Kiosk Mode request via the \`?kiosk\` URL parameter.
+- [x] Dashboard-only Kiosk Mode request via the `?kiosk` URL parameter.
 - [x] User verified the dashboard-only view on Windows 11 (2026-11-08).
 - [x] Windows CI and packaging workflows build successfully for the current preview.
 - [ ] Review/integrate the current stacked dashboard and installer PRs (requires explicit user approval).

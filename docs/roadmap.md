@@ -21,13 +21,14 @@
 - [ ] Implement a full single-instance activation handoff.
 - [ ] Implement the application host and background lifecycle.
 - [ ] Add persistent settings and diagnostics.
-- [ ] Establish the complete Windows CI/test matrix.
+- [x] Establish the first Windows CI build.
 
 ## Phase 2 — Home Assistant
 
-- [ ] Implement OAuth/token lifecycle.
-- [ ] Implement WebSocket connection and subscriptions.
-- [ ] Add entity discovery, search, and favourites.
+- [ ] Implement OAuth PKCE/token lifecycle.
+- [x] Implement a one-connection WebSocket client and state-change subscription.
+- [ ] Add a connection supervisor with reconnect/backoff and token refresh.
+- [ ] Add entity discovery, search, and favourites to the UI.
 - [ ] Add service, scene, and script controls.
 - [ ] Complete integration pairing and telemetry entities.
 

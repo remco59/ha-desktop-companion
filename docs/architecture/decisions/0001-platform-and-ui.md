@@ -9,7 +9,7 @@ Use C# on .NET 10 LTS with WinUI 3 from Windows App SDK 2.6.5. Target Windows 11
 
 ## Rationale
 
-The product depends heavily on Windows APIs: audio sessions, process/window management, startup, notifications, and tray behaviour. A native UI avoids a browser shell and keeps platform integration direct.
+The product depends heavily on Windows APIs: audio sessions, process/window management, startup, notifications, and tray behaviour. A native WinUI 3 shell keeps Windows platform integration direct. The Home Assistant dashboard itself is intentionally rendered by the official frontend inside WebView2; it is not a general-purpose browser shell and does not replace the native application chrome.
 
 ## Consequences
 

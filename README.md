@@ -4,7 +4,7 @@ A native Windows companion for Home Assistant.
 
 Desktop Companion brings your Windows PC and smart home together in one approachable control centre. It is designed around a full Windows application and a configurable system-tray dashboard, with shared sensors, actions, widgets, and configuration.
 
-> **Project status:** Early development. The initial foundation is being established; features described here are planned, not yet implemented.
+> **Project status:** Early preview. The Windows app has a native WinUI 3 shell, system-tray experience, Home Assistant OAuth/WebSocket connection, and an embedded WebView2 host for the real Home Assistant frontend. The embedded dashboard now uses Home Assistant's own UI rather than a parallel native entity-control renderer. Live dashboard sign-in and visual behaviour still need validation on Windows 11.
 
 ## Product goals
 

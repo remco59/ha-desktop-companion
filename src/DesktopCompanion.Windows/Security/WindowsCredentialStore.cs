@@ -42,7 +42,11 @@ public sealed class WindowsCredentialStore : ISecretStore
         }
         finally
         {
-            if (credential.CredentialBlob != IntPtr.Zero) Marshal.ZeroFreeHGlobal(credential.CredentialBlob);
+            if (credential.CredentialBlob != IntPtr.Zero)
+            {
+                Marshal.Copy(new byte[blob.Length], 0, credential.CredentialBlob, blob.Length);
+                Marshal.FreeHGlobal(credential.CredentialBlob);
+            }
             CryptographicOperations.ZeroMemory(blob);
         }
     }

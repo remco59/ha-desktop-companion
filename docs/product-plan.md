@@ -192,6 +192,8 @@ Acceptance:
 
 **Goal:** Show reliable Windows PC telemetry in Desktop Companion and prepare it for Home Assistant publishing.
 
+Current implementation note (2026-11-08): the first CPU + physical-memory + uptime slice is implemented in draft PR #19, stacked on dashboard PR #18. The user compared it with Windows Task Manager on Windows 11 and confirmed CPU (about 23% vs 21.9%), memory (55% vs 54.7%), and uptime (9h22) are consistent. Approximately one second of display lag is acceptable. The two-second sampling cadence remains unchanged. Storage and network are the next implementation slice.
+
 Initial sensor set:
 - CPU utilisation.
 - Memory used/available and percentage.
@@ -203,16 +205,20 @@ Initial sensor set:
 - Temperatures/fan speeds are optional hardware-dependent sensors; report unavailable honestly rather than inventing values.
 
 Work:
-- Define stable sensor IDs, units, categories, precision, availability, sample timestamps, and error states.
-- Create a provider registry so unavailable hardware providers do not break other sensors.
-- Use OS-supported APIs/performance counters first. Keep hardware-vendor-specific sources behind separate providers.
-- Define configurable sampling intervals and avoid high-frequency polling by default.
-- Cache last known reading and mark it stale/unavailable when polling fails.
-- Build a Sensors page with category, current value, unit, availability, and last-updated timestamp.
-- Add an overview summary for CPU and memory after the sensor service is reliable.
-- Add capability diagnostics (what the machine supports and why a sensor is unavailable).
+- [x] Define stable CPU, physical-memory, and uptime sensor IDs, units, categories, and sample timestamps.
+- [x] Read CPU cumulative counters with GetSystemTimes and physical-memory status with GlobalMemoryStatusEx.
+- [x] Prime CPU counters before publishing a percentage; never report an unprimed first sample as a real reading.
+- [x] Add a two-second background sampling loop, retain last-known readings, and mark retained readings stale after a failed refresh.
+- [x] Build the first native Sensors page with current CPU, memory, uptime, computer name, Windows version, and last-sample feedback.
+- [x] Add Overview summaries for CPU, memory, and uptime.
+- [ ] Add a provider registry, configurable sampling intervals, and sensor enable/disable preferences.
+- [ ] Implement storage capacity/used/free by volume.
+- [ ] Implement network throughput and adapter status.
+- [ ] Add capability diagnostics for optional hardware providers; keep GPU, temperatures, and fan speeds unavailable until a supported provider exists.
 
 Acceptance:
+- [x] CPU and physical-memory readings were compared with Windows Task Manager on Windows 11 and accepted by the user (2026-11-08); around one second of display lag is acceptable.
+- [x] Uptime display was compared with Windows Task Manager and matched (9h22 at validation).
 - Sensor readings are accurate enough for monitoring, timestamped, and refresh without freezing the UI.
 - Missing GPU/temperature support does not break CPU, memory, storage, or network.
 - CPU usage sampling does not report an unprimed first counter value as real usage.
@@ -372,9 +378,9 @@ The next work should be selected from this order unless new user feedback change
 
 ### Immediate next implementation slice
 
-The native dashboard selector is implemented in open PR #18. Its initial presets are the three confirmed Home Assistant views (Control, Media, System), with Control as the default. The latest Windows CI run passed, but live switching, reconnect behaviour, and selection persistence still need to be verified on Windows 11 before the PR is considered accepted.
+The native dashboard selector is in open draft PR #18; the user confirmed the Control dashboard opens in the embedded dashboard view on Windows 11. Multi-view persistence and reconnect acceptance remain separate checks.
 
-After that acceptance and explicit merge approval, move to the first Windows sensor vertical slice (CPU + memory + uptime), before designing telemetry publication.
+The first Windows CPU + memory + uptime slice is in draft PR #19, stacked on PR #18. After Windows CI and review, the next sensor work is storage + network, then a provider registry and capability settings. Design the secure telemetry protocol before publishing any sensor to Home Assistant.
 
 ---
 
@@ -411,5 +417,6 @@ At the time of writing:
 - The integrated baseline is `main` at `5740d72dba1a9e2a496abd11661b43835e1587c3`. GitHub showed no open pull requests during the 2026-11-08 review; the earlier PR #14/#15 stack references above this handoff are historical and have been integrated.
 - Windows CI for the current main commit passed in run [#42522021504](https://github.com/remco59/ha-desktop-companion/actions/runs/42522021504). Windows Package also passed for the preceding dashboard PR head [#42521816660](https://github.com/remco59/ha-desktop-companion/actions/runs/42521816660).
 - Real in-place installer upgrade acceptance remains outstanding and must stay visible until tested on Windows.
-- PR #18 — [native Home Assistant dashboard selector](https://github.com/remco59/ha-desktop-companion/pull/18) — open draft on `feat/native-dashboard-selector`. Latest Windows CI passed. It includes Control, Media, and System presets; live Windows/Home Assistant validation remains outstanding. Do not merge without explicit user permission.
+- PR #18 — [native Home Assistant dashboard selector](https://github.com/remco59/ha-desktop-companion/pull/18) — open draft on `feat/native-dashboard-selector`. The user confirmed the Control dashboard opens in the embedded dashboard view on Windows 11 (2026-11-08); multi-view persistence and reconnect acceptance remain to be verified. Do not merge without explicit user permission.
+- PR #19 — [Windows CPU, memory, and uptime sensors](https://github.com/remco59/ha-desktop-companion/pull/19) — draft, stacked on PR #18. Windows CI and installer packaging passed; the user compared CPU, memory, and uptime with Windows Task Manager on Windows 11 and accepted the readings, including the roughly one-second display lag. Storage/network sensors remain the next slice.
 - The current project plan is documentation, not permission to merge, release, or change production Home Assistant configuration.

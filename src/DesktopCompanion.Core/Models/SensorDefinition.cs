@@ -12,7 +12,8 @@ public sealed record SensorReading(
     DateTimeOffset RecordedAt,
     double? NumericValue = null,
     string? TextValue = null,
-    string? Unit = null);
+    string? Unit = null,
+    bool IsStale = false);
 
 public sealed record SensorDescriptor(
     SensorDefinition Definition,

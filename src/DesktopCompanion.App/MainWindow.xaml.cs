@@ -125,6 +125,115 @@ public sealed partial class MainWindow : Window
         });
     }
 
+    public void UpdateSensorSample(SensorSample sample)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            var cpu = FindReading(sample, "cpu_usage_percent");
+            var memory = FindReading(sample, "memory_usage_percent");
+            var used = FindReading(sample, "memory_used_bytes");
+            var available = FindReading(sample, "memory_available_bytes");
+            var total = FindReading(sample, "memory_total_bytes");
+            var uptime = FindReading(sample, "system_uptime_seconds");
+
+            OverviewCpuValue.Text = FormatPercent(cpu, sample.Errors, "cpu_usage_percent");
+            OverviewCpuDetail.Text = ReadingStatus(cpu, sample.Errors, "cpu_usage_percent",
+                "Waiting for second sample…");
+            OverviewMemoryValue.Text = FormatPercent(memory, sample.Errors, "memory_usage_percent");
+            OverviewMemoryDetail.Text = used?.NumericValue is double usedBytes && total?.NumericValue is double totalBytes
+                ? $"{FormatGigabytes(usedBytes)} of {FormatGigabytes(totalBytes)} used"
+                : ReadingStatus(memory, sample.Errors, "memory_usage_percent", "Reading physical memory…");
+
+            SensorCpuValue.Text = FormatPercent(cpu, sample.Errors, "cpu_usage_percent");
+            SensorCpuDetail.Text = ReadingStatus(cpu, sample.Errors, "cpu_usage_percent",
+                "Waiting for second sample…");
+            SensorMemoryValue.Text = FormatPercent(memory, sample.Errors, "memory_usage_percent");
+            SensorMemoryDetail.Text = used?.NumericValue is double usedValue && total?.NumericValue is double totalValue
+                ? $"{FormatGigabytes(usedValue)} of {FormatGigabytes(totalValue)} used"
+                : ReadingStatus(memory, sample.Errors, "memory_usage_percent", "Reading physical memory…");
+            SensorMemoryUsedValue.Text = FormatBytes(used, sample.Errors, "memory_used_bytes");
+            SensorMemoryAvailableValue.Text = FormatBytes(available, sample.Errors, "memory_available_bytes");
+            SensorMemoryTotalValue.Text = FormatBytes(total, sample.Errors, "memory_total_bytes");
+
+            if (uptime?.NumericValue is double uptimeSeconds)
+            {
+                var formattedUptime = FormatUptime(uptimeSeconds);
+                UptimeValue.Text = formattedUptime;
+                SensorUptimeValue.Text = formattedUptime;
+            }
+            else if (sample.Errors.TryGetValue("system_uptime_seconds", out var uptimeError))
+            {
+                UptimeValue.Text = "Unavailable";
+                SensorUptimeValue.Text = "Unavailable";
+                SensorLastUpdatedText.Text = $"Uptime sensor error: {uptimeError}";
+            }
+
+            var hostname = FindReading(sample, "system_hostname");
+            var windowsVersion = FindReading(sample, "windows_version");
+            SensorComputerNameValue.Text = $"Computer name: {hostname?.TextValue ?? "Unavailable"}";
+            SensorWindowsVersionValue.Text = $"Windows version: {windowsVersion?.TextValue ?? "Unavailable"}";
+            SensorLastUpdatedText.Text = $"Last sample {sample.SampledAt.ToLocalTime():HH:mm:ss} · updates every 2 seconds";
+        });
+    }
+
+    public void UpdateSensorMonitoringError(string message)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            SensorLastUpdatedText.Text = $"Sensor monitoring unavailable: {message}";
+            OverviewCpuDetail.Text = "Sensor monitoring unavailable";
+            OverviewMemoryDetail.Text = "Sensor monitoring unavailable";
+        });
+    }
+
+    private static SensorReading? FindReading(SensorSample sample, string sensorId) =>
+        sample.Readings.TryGetValue(sensorId, out var reading) ? reading : null;
+
+    private static string FormatPercent(
+        SensorReading? reading,
+        IReadOnlyDictionary<string, string> errors,
+        string sensorId)
+    {
+        if (reading?.NumericValue is double value)
+            return $"{value:0.0}%";
+        return errors.ContainsKey(sensorId) ? "Unavailable" : "Warming up…";
+    }
+
+    private static string FormatBytes(
+        SensorReading? reading,
+        IReadOnlyDictionary<string, string> errors,
+        string sensorId)
+    {
+        if (reading?.NumericValue is double value)
+            return FormatGigabytes(value);
+        return errors.ContainsKey(sensorId) ? "Unavailable" : "—";
+    }
+
+    private static string ReadingStatus(
+        SensorReading? reading,
+        IReadOnlyDictionary<string, string> errors,
+        string sensorId,
+        string waitingText)
+    {
+        if (reading?.IsStale == true)
+            return "Last known value · latest sample unavailable";
+        if (errors.TryGetValue(sensorId, out var error))
+            return $"Unavailable: {error}";
+        return reading is null ? waitingText : "Live Windows system reading";
+    }
+
+    private static string FormatGigabytes(double bytes) =>
+        $"{bytes / 1_073_741_824d:0.0} GB";
+
+    private static string FormatUptime(double seconds)
+    {
+        var uptime = TimeSpan.FromSeconds(Math.Max(0, seconds));
+        var days = (int)uptime.TotalDays;
+        if (days > 0) return $"{days}d {uptime.Hours}h";
+        if (uptime.Hours > 0) return $"{uptime.Hours}h {uptime.Minutes}m";
+        return $"{uptime.Minutes}m";
+    }
+
     private void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
         if (_allowClose) return;
@@ -358,10 +467,12 @@ public sealed partial class MainWindow : Window
         var isOverview = page == "Overview";
         var isHomeAssistant = page == "Home Assistant";
         var isDashboard = page == "Dashboard";
-        var isPlaceholder = !isOverview && !isHomeAssistant && !isDashboard;
+        var isSensors = page == "Sensors";
+        var isPlaceholder = !isOverview && !isHomeAssistant && !isDashboard && !isSensors;
         ScrollablePageContent.Visibility = isDashboard ? Visibility.Collapsed : Visibility.Visible;
         OverviewContent.Visibility = isOverview ? Visibility.Visible : Visibility.Collapsed;
         HomeAssistantContent.Visibility = isHomeAssistant ? Visibility.Visible : Visibility.Collapsed;
+        SensorsContent.Visibility = isSensors ? Visibility.Visible : Visibility.Collapsed;
         PlaceholderContent.Visibility = isPlaceholder ? Visibility.Visible : Visibility.Collapsed;
         DashboardContent.Visibility = isDashboard ? Visibility.Visible : Visibility.Collapsed;
         PageSubtitle.Text = page switch

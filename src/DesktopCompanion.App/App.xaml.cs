@@ -3,6 +3,7 @@ using DesktopCompanion.HomeAssistant.Authentication;
 using DesktopCompanion.HomeAssistant.Services;
 using DesktopCompanion.HomeAssistant.WebSocket;
 using DesktopCompanion.Windows.Security;
+using DesktopCompanion.Windows.Sensors;
 using DesktopCompanion.Windows.Tray;
 using Microsoft.UI.Xaml;
 
@@ -15,6 +16,8 @@ public partial class App : Application
     private TrayIconHost? _trayIconHost;
     private HomeAssistantTokenProvider? _tokenProvider;
     private HomeAssistantConnectionSupervisor? _connectionSupervisor;
+    private WindowsSensorMonitor? _sensorMonitor;
+    private Task? _sensorMonitorStartTask;
     private Uri? _connectedInstance;
     private bool _isExiting;
 
@@ -31,6 +34,10 @@ public partial class App : Application
         _mainWindow = new MainWindow();
         _mainWindow.ConnectHomeAssistantRequested += OnConnectHomeAssistantRequested;
         _mainWindow.DisconnectHomeAssistantRequested += OnDisconnectHomeAssistantRequested;
+
+        _sensorMonitor = new WindowsSensorMonitor(new WindowsSystemSensorProvider());
+        _sensorMonitor.Sampled += sample => _mainWindow?.UpdateSensorSample(sample);
+        _sensorMonitorStartTask = StartSensorMonitorAsync();
 
         var savedUrl = AppSettingsStore.LoadHomeAssistantUrl();
         if (!string.IsNullOrWhiteSpace(savedUrl) &&
@@ -52,6 +59,19 @@ public partial class App : Application
         _trayIconHost.Activated += (_, _) => ToggleTrayPopup();
         _trayIconHost.ContextRequested += (_, _) => ToggleTrayPopup();
         _mainWindow.Activate();
+    }
+
+    private async Task StartSensorMonitorAsync()
+    {
+        try
+        {
+            if (_sensorMonitor is not null)
+                await _sensorMonitor.StartAsync();
+        }
+        catch (Exception exception)
+        {
+            _mainWindow?.UpdateSensorMonitoringError(exception.Message);
+        }
     }
 
     private async void OnConnectHomeAssistantRequested(Uri instanceUri) =>
@@ -202,6 +222,13 @@ public partial class App : Application
     {
         if (_isExiting) return;
         _isExiting = true;
+        if (_sensorMonitorStartTask is not null)
+            await _sensorMonitorStartTask;
+        if (_sensorMonitor is not null)
+        {
+            await _sensorMonitor.DisposeAsync();
+            _sensorMonitor = null;
+        }
         await StopHomeAssistantAsync();
         _trayIconHost?.Dispose();
         _trayIconHost = null;

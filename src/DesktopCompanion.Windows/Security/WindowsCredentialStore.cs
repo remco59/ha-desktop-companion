@@ -19,12 +19,9 @@ public sealed class WindowsCredentialStore : ISecretStore
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
         ArgumentNullException.ThrowIfNull(secret);
-
         var blob = Encoding.UTF8.GetBytes(secret);
         if (blob.Length > MaximumBlobSize)
-        {
             throw new ArgumentOutOfRangeException(nameof(secret), "The credential is larger than Windows Credential Manager supports.");
-        }
 
         var credential = new NativeCredential
         {
@@ -40,16 +37,12 @@ public sealed class WindowsCredentialStore : ISecretStore
         {
             Marshal.Copy(blob, 0, credential.CredentialBlob, blob.Length);
             if (!CredWrite(ref credential, 0))
-            {
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Windows could not save the Home Assistant credential.");
-            }
         }
         finally
         {
-            if (credential.CredentialBlob != IntPtr.Zero)
-            {
-                Marshal.ZeroFreeHGlobal(credential.CredentialBlob);
-            }
+            if (credential.CredentialBlob != IntPtr.Zero) Marshal.ZeroFreeHGlobal(credential.CredentialBlob);
+            CryptographicOperations.ZeroMemory(blob);
         }
     }
 
@@ -59,11 +52,7 @@ public sealed class WindowsCredentialStore : ISecretStore
         if (!CredRead(key, GenericCredential, 0, out var credentialPointer))
         {
             var error = Marshal.GetLastWin32Error();
-            if (error == 1168) // ERROR_NOT_FOUND
-            {
-                return null;
-            }
-
+            if (error == 1168) return null; // ERROR_NOT_FOUND
             throw new Win32Exception(error, "Windows could not read the Home Assistant credential.");
         }
 
@@ -71,13 +60,12 @@ public sealed class WindowsCredentialStore : ISecretStore
         {
             var credential = Marshal.PtrToStructure<NativeCredential>(credentialPointer);
             if (credential.CredentialBlobSize > MaximumBlobSize)
-            {
                 throw new InvalidOperationException("The stored credential exceeded the supported size.");
-            }
 
-            var blob = new byte[credential.CredentialBlobSize];
+            var blob = new byte[checked((int)credential.CredentialBlobSize)];
             Marshal.Copy(credential.CredentialBlob, blob, 0, blob.Length);
-            return Encoding.UTF8.GetString(blob);
+            try { return Encoding.UTF8.GetString(blob); }
+            finally { CryptographicOperations.ZeroMemory(blob); }
         }
         finally
         {
@@ -88,16 +76,9 @@ public sealed class WindowsCredentialStore : ISecretStore
     public void Delete(string key)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        if (CredDelete(key, GenericCredential, 0))
-        {
-            return;
-        }
-
+        if (CredDelete(key, GenericCredential, 0)) return;
         var error = Marshal.GetLastWin32Error();
-        if (error != 1168) // ERROR_NOT_FOUND
-        {
-            throw new Win32Exception(error, "Windows could not delete the Home Assistant credential.");
-        }
+        if (error != 1168) throw new Win32Exception(error, "Windows could not delete the Home Assistant credential.");
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]

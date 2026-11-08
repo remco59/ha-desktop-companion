@@ -15,4 +15,7 @@ public sealed class HomeAssistantOAuthTokens
 
     [JsonPropertyName("token_type")]
     public string TokenType { get; init; } = "Bearer";
+
+    [JsonIgnore]
+    public string ClientId { get; set; } = string.Empty;
 }

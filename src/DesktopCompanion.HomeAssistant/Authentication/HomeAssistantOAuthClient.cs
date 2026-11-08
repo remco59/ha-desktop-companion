@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 
 namespace DesktopCompanion.HomeAssistant.Authentication;
 
@@ -28,7 +27,6 @@ public sealed class HomeAssistantOAuthClient : IDisposable
         CancellationToken cancellationToken = default)
     {
         ValidateHomeAssistantUri(homeAssistantUri);
-
         var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start(1);
 
@@ -41,23 +39,23 @@ public sealed class HomeAssistantOAuthClient : IDisposable
             var verifier = CreateRandomToken(32);
             var challenge = Base64Url(SHA256.HashData(Encoding.ASCII.GetBytes(verifier)));
 
-            var authorizeUri = BuildEndpoint(homeAssistantUri, "auth/authorize");
-            var query = new Dictionary<string, string>
-            {
-                ["client_id"] = clientId.AbsoluteUri,
-                ["redirect_uri"] = redirectUri.AbsoluteUri,
-                ["response_type"] = "code",
-                ["state"] = state,
-                ["code_challenge"] = challenge,
-                ["code_challenge_method"] = "S256"
-            };
+            var authorizeUri = AddQuery(
+                BuildEndpoint(homeAssistantUri, "auth/authorize"),
+                new Dictionary<string, string>
+                {
+                    ["client_id"] = clientId.AbsoluteUri,
+                    ["redirect_uri"] = redirectUri.AbsoluteUri,
+                    ["response_type"] = "code",
+                    ["state"] = state,
+                    ["code_challenge"] = challenge,
+                    ["code_challenge_method"] = "S256"
+                });
 
-            var authorizeUrl = AddQuery(authorizeUri, query);
-            Process.Start(new ProcessStartInfo(authorizeUrl.AbsoluteUri) { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(authorizeUri.AbsoluteUri) { UseShellExecute = true });
 
-            using var callbackTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            callbackTimeout.CancelAfter(TimeSpan.FromMinutes(5));
-            var callback = await ReceiveCallbackAsync(listener, callbackTimeout.Token).ConfigureAwait(false);
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromMinutes(5));
+            var callback = await ReceiveCallbackAsync(listener, timeout.Token).ConfigureAwait(false);
 
             var receivedState = Encoding.UTF8.GetBytes(callback.State ?? string.Empty);
             var expectedState = Encoding.UTF8.GetBytes(state);
@@ -77,12 +75,10 @@ public sealed class HomeAssistantOAuthClient : IDisposable
                 throw new InvalidOperationException("Home Assistant did not return an authorization code.");
             }
 
-            return await ExchangeAuthorizationCodeAsync(
-                homeAssistantUri,
-                clientId,
-                callback.Code,
-                verifier,
-                cancellationToken).ConfigureAwait(false);
+            var tokens = await ExchangeAuthorizationCodeAsync(
+                homeAssistantUri, clientId, callback.Code, verifier, cancellationToken).ConfigureAwait(false);
+            tokens.ClientId = clientId.AbsoluteUri;
+            return tokens;
         }
         finally
         {
@@ -92,40 +88,32 @@ public sealed class HomeAssistantOAuthClient : IDisposable
 
     public async Task<HomeAssistantOAuthTokens> RefreshAsync(
         Uri homeAssistantUri,
+        string clientId,
         string refreshToken,
         CancellationToken cancellationToken = default)
     {
         ValidateHomeAssistantUri(homeAssistantUri);
+        ArgumentException.ThrowIfNullOrWhiteSpace(clientId);
         ArgumentException.ThrowIfNullOrWhiteSpace(refreshToken);
 
-        // Home Assistant requires the exact client_id used during authorization.
-        // Persisting the loopback port is unnecessary: a refresh grant does not
-        // require the client_id to be tied to the original redirect listener.
-        // Use the stable loopback origin for subsequent refresh requests.
-        var clientId = new Uri("http://127.0.0.1/");
         using var response = await _httpClient.PostAsync(
             BuildEndpoint(homeAssistantUri, "auth/token"),
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["grant_type"] = "refresh_token",
                 ["refresh_token"] = refreshToken,
-                ["client_id"] = clientId.AbsoluteUri
+                ["client_id"] = clientId
             }),
             cancellationToken).ConfigureAwait(false);
 
         await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
-        var tokens = await response.Content.ReadFromJsonAsync<HomeAssistantOAuthTokens>(
-            cancellationToken: cancellationToken).ConfigureAwait(false);
-
-        return tokens ?? throw new InvalidOperationException("Home Assistant returned an empty token response.");
+        return await response.Content.ReadFromJsonAsync<HomeAssistantOAuthTokens>(
+                   cancellationToken: cancellationToken).ConfigureAwait(false)
+               ?? throw new InvalidOperationException("Home Assistant returned an empty token response.");
     }
 
     private async Task<HomeAssistantOAuthTokens> ExchangeAuthorizationCodeAsync(
-        Uri homeAssistantUri,
-        Uri clientId,
-        string code,
-        string verifier,
-        CancellationToken cancellationToken)
+        Uri homeAssistantUri, Uri clientId, string code, string verifier, CancellationToken cancellationToken)
     {
         using var response = await _httpClient.PostAsync(
             BuildEndpoint(homeAssistantUri, "auth/token"),
@@ -153,9 +141,7 @@ public sealed class HomeAssistantOAuthClient : IDisposable
         return tokens;
     }
 
-    private static async Task<OAuthCallback> ReceiveCallbackAsync(
-        TcpListener listener,
-        CancellationToken cancellationToken)
+    private static async Task<OAuthCallback> ReceiveCallbackAsync(TcpListener listener, CancellationToken cancellationToken)
     {
         using var client = await listener.AcceptTcpClientAsync(cancellationToken).ConfigureAwait(false);
         await using var stream = client.GetStream();
@@ -167,8 +153,6 @@ public sealed class HomeAssistantOAuthClient : IDisposable
             throw new InvalidOperationException("The OAuth callback request was empty.");
         }
 
-        // Drain headers before writing the response. Reject oversized headers to keep
-        // the temporary loopback endpoint bounded.
         var headerBytes = 0;
         string? line;
         do
@@ -201,23 +185,18 @@ public sealed class HomeAssistantOAuthClient : IDisposable
         return callback;
     }
 
-    private static async Task WriteCallbackResponseAsync(
-        NetworkStream stream,
-        bool success,
-        CancellationToken cancellationToken)
+    private static async Task WriteCallbackResponseAsync(NetworkStream stream, bool success, CancellationToken cancellationToken)
     {
         var body = success
             ? "<!doctype html><html><head><meta charset=\"utf-8\"><title>Desktop Companion</title></head><body><h2>Home Assistant connected</h2><p>You can close this tab and return to Desktop Companion.</p></body></html>"
             : "<!doctype html><html><body><h2>Sign-in could not be completed</h2><p>Return to Desktop Companion and try again.</p></body></html>";
-        var bodyBytes = Encoding.UTF8.GetBytes(body);
+        var bytes = Encoding.UTF8.GetBytes(body);
         var header = Encoding.ASCII.GetBytes(
             $"HTTP/1.1 {(success ? "200 OK" : "400 Bad Request")}\r\n" +
             "Content-Type: text/html; charset=utf-8\r\n" +
-            $"Content-Length: {bodyBytes.Length}\r\n" +
-            "Connection: close\r\n\r\n");
-
+            $"Content-Length: {bytes.Length}\r\nConnection: close\r\n\r\n");
         await stream.WriteAsync(header, cancellationToken).ConfigureAwait(false);
-        await stream.WriteAsync(bodyBytes, cancellationToken).ConfigureAwait(false);
+        await stream.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
         await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -231,7 +210,6 @@ public sealed class HomeAssistantOAuthClient : IDisposable
             var value = separator < 0 ? string.Empty : part[(separator + 1)..];
             values[WebUtility.UrlDecode(key)] = WebUtility.UrlDecode(value);
         }
-
         return values;
     }
 
@@ -242,14 +220,10 @@ public sealed class HomeAssistantOAuthClient : IDisposable
         return new UriBuilder(endpoint) { Query = query }.Uri;
     }
 
-    private static Uri BuildEndpoint(Uri baseUri, string relativePath)
-    {
-        var baseText = baseUri.AbsoluteUri.TrimEnd('/');
-        return new Uri($"{baseText}/{relativePath}", UriKind.Absolute);
-    }
+    private static Uri BuildEndpoint(Uri baseUri, string relativePath) =>
+        new($"{baseUri.AbsoluteUri.TrimEnd('/')}/{relativePath}", UriKind.Absolute);
 
-    private static string CreateRandomToken(int byteCount) =>
-        Base64Url(RandomNumberGenerator.GetBytes(byteCount));
+    private static string CreateRandomToken(int byteCount) => Base64Url(RandomNumberGenerator.GetBytes(byteCount));
 
     private static string Base64Url(byte[] value) =>
         Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_');
@@ -257,8 +231,7 @@ public sealed class HomeAssistantOAuthClient : IDisposable
     private static void ValidateHomeAssistantUri(Uri uri)
     {
         ArgumentNullException.ThrowIfNull(uri);
-        if (!uri.IsAbsoluteUri ||
-            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        if (!uri.IsAbsoluteUri || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
             throw new ArgumentException("The Home Assistant URL must be an absolute HTTP or HTTPS URL.", nameof(uri));
         }
@@ -266,13 +239,8 @@ public sealed class HomeAssistantOAuthClient : IDisposable
 
     private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
     {
-        if (response.IsSuccessStatusCode)
-        {
-            return;
-        }
+        if (response.IsSuccessStatusCode) return;
 
-        var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        // Do not include response bodies: authentication endpoints may return sensitive diagnostics.
         var message = response.StatusCode switch
         {
             HttpStatusCode.Forbidden => "Home Assistant denied access. Check that the account is allowed to sign in.",
@@ -284,10 +252,7 @@ public sealed class HomeAssistantOAuthClient : IDisposable
 
     public void Dispose()
     {
-        if (_ownsHttpClient)
-        {
-            _httpClient.Dispose();
-        }
+        if (_ownsHttpClient) _httpClient.Dispose();
     }
 
     private sealed record OAuthCallback(string? Code, string? State, string? Error);

@@ -3,7 +3,27 @@
 from __future__ import annotations
 
 import math
+import sys
+import types
 import unittest
+from pathlib import Path
+
+# Import only the pure protocol module. The integration package __init__ imports
+# Home Assistant runtime dependencies, which are deliberately absent in this
+# lightweight unit-test job.
+integration_root = Path(__file__).resolve().parents[1] / "custom_components"
+integration_package = integration_root / "desktop_companion"
+sys.modules.setdefault(
+    "custom_components",
+    types.ModuleType("custom_components"),
+)
+if "custom_components" not in sys.modules:
+    raise RuntimeError("Could not initialise the custom_components namespace.")
+sys.modules["custom_components"].__path__ = [str(integration_root)]
+package = types.ModuleType("custom_components.desktop_companion")
+package.__path__ = [str(integration_package)]
+package.__package__ = "custom_components.desktop_companion"
+sys.modules.setdefault("custom_components.desktop_companion", package)
 
 from custom_components.desktop_companion.protocol import (
     ProtocolValidationError,

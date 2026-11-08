@@ -20,6 +20,8 @@ public sealed partial class MainWindow : Window
     private readonly Dictionary<string, StorageSensorCard> _storageSensorCards = new(StringComparer.Ordinal);
     private readonly Dictionary<string, NetworkSensorCard> _networkSensorCards = new(StringComparer.Ordinal);
     private readonly Dictionary<string, CheckBox> _sensorPublishingCheckBoxes = new(StringComparer.Ordinal);
+    private bool _homeAssistantPublishingConnected;
+    private bool _homeAssistantDevicePaired;
 
     private IReadOnlyList<DashboardDefinition> _dashboards = [DashboardDefinition.Default];
     private DashboardDefinition _selectedDashboard = DashboardDefinition.Default;
@@ -215,12 +217,17 @@ public sealed partial class MainWindow : Window
             _sensorPublishingCheckBoxes.Add(id, checkBox);
             SensorPublishingSelectionPanel.Children.Add(checkBox);
         }
+
+        PairSensorsButton.IsEnabled = _homeAssistantPublishingConnected && _sensorPublishingCheckBoxes.Count > 0;
+        UnpairSensorsButton.IsEnabled = _homeAssistantPublishingConnected && _homeAssistantDevicePaired;
     }
 
     public void UpdateHomeAssistantPublishingStatus(string status, bool paired, bool connected)
     {
         DispatcherQueue.TryEnqueue(() =>
         {
+            _homeAssistantPublishingConnected = connected;
+            _homeAssistantDevicePaired = paired;
             SensorPublishingStatusText.Text = status;
             PairSensorsButton.Content = paired ? "Update published sensors" : "Pair with Home Assistant";
             PairSensorsButton.IsEnabled = connected && _sensorPublishingCheckBoxes.Count > 0;

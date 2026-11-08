@@ -27,7 +27,7 @@
 
 - [ ] Implement OAuth PKCE/token lifecycle.
 - [x] Implement a one-connection WebSocket client and state-change subscription.
-- [ ] Add a connection supervisor with reconnect/backoff and token refresh.
+- [x] Add a connection supervisor with reconnect/backoff and status events.
 - [ ] Add entity discovery, search, and favourites to the UI.
 - [ ] Add service, scene, and script controls.
 - [ ] Complete integration pairing and telemetry entities.

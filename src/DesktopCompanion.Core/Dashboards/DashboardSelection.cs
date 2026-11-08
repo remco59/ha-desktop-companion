@@ -7,11 +7,12 @@ public static class DashboardSelection
 {
     /// <summary>Initial views in the Desktop Companion Home Assistant dashboard.</summary>
     public static IReadOnlyList<DashboardDefinition> Presets { get; } = Array.AsReadOnly(
-    [
-        DashboardDefinition.Default,
-        new("media", "Media", "desktop-companion/media", "mdi:music", 1),
-        new("system", "System", "desktop-companion/system", "mdi:server", 2)
-    ]);
+        new DashboardDefinition[]
+        {
+            DashboardDefinition.Default,
+            new("media", "Media", "desktop-companion/media", "mdi:music", 1),
+            new("system", "System", "desktop-companion/system", "mdi:server", 2)
+        });
 
     public static IReadOnlyList<DashboardDefinition> Normalize(IEnumerable<DashboardDefinition>? dashboards)
     {

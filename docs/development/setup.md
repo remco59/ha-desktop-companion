@@ -18,7 +18,7 @@ dotnet restore .\src\DesktopCompanion.sln
 dotnet build .\src\DesktopCompanion.sln -c Debug
 ```
 
-The WinUI application currently contains a navigation shell and explicit "not connected" states. It does not yet connect UI controls to live services.
+The WinUI application includes the native shell, tray experience, Home Assistant connection lifecycle, and embedded dashboard. The dashboard uses WebView2 and Home Assistant's own frontend; Windows sensor publishing and most native Windows controls are still on the roadmap. See [the Product Plan](../product-plan.md) for the current implementation status and next steps.
 
 ## Validate the Home Assistant integration
 

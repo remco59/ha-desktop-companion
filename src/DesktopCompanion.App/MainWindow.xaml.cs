@@ -59,7 +59,6 @@ public sealed partial class MainWindow : Window
         _dashboardSelectionInitialized = true;
         UpdateDefaultDashboardButton();
         UpdateDashboardUri();
-        AppSettingsStore.SaveDashboardSettings(_dashboards, _selectedDashboard.Id);
     }
 
     public void SetSelectedDashboard(string? dashboardId)

@@ -228,35 +228,46 @@ Acceptance:
 
 ### Milestone 3 — Secure Home Assistant device pairing and telemetry
 
-**Goal:** Register the Windows PC as a Home Assistant device and expose selected Windows sensors as HA entities.
+**Goal:** Register the Windows PC as a Home Assistant device and expose only selected Windows sensors as HA entities.
 
-This milestone starts with a protocol/design ADR, not code.
+Current implementation note (2026-11-08): the first end-to-end pairing/publication slice is being delivered in draft PR #21, stacked on PR #20. The Home Assistant integration registers a paired PC and dynamic sensor entities. Desktop Companion uses a separate authenticated outbound WebSocket, an administrator-authorised pairing command, an owner-bound nonce session, monotonic sequence numbers, bounded payloads, and an explicit selected-sensor list. Device metadata is persisted in the HA config entry; readings and session nonces stay in memory. The Sensors page includes the pairing and publishing controls. CI must validate C# and Python protocol tests; actual pairing, restart/reconnect and revocation still require the user's live HA instance.
 
-Required design decisions:
-- Pairing UX and identity (one-time code or equivalent short-lived pairing mechanism).
-- How the Windows app authenticates to the Home Assistant integration without embedding a long-lived shared secret in plaintext.
-- Whether messages use an authenticated outbound channel or a deliberately designed alternative. Do not introduce an inbound listener casually.
-- Device ID stability, naming, re-pairing, secret rotation, and revocation.
-- Replay protection, timestamps/nonces, payload limits, schema/version negotiation, and rate limits.
-- Availability/heartbeat/last-seen and stale sensor behaviour.
-- Sensor metadata mapping to Home Assistant device class, state class, unit, entity category, and suggested entity IDs.
-- Behaviour on HA restart, Windows sleep/resume, connection loss, and credential expiration.
+#### Accepted protocol decision
 
-Implementation sequence after the ADR is accepted:
-1. Config flow and pairing UI.
-2. Device registry entry and unique device identity.
-3. Authenticated telemetry message contract.
-4. One or two sensors end-to-end (uptime and memory are good first candidates).
-5. Availability and reconnect behaviour.
-6. Sensor selection and publishing controls.
-7. Expand to the full sensor set.
+ADR 0008 defines the implementation contract:
+
+- Pairing is explicitly initiated in Desktop Companion and requires an authenticated Home Assistant administrator.
+- A random installation UUID identifies the PC; it is not a credential and no MAC address, hardware serial, or machine GUID is collected.
+- The HA integration binds the paired installation to the authenticated HA user ID.
+- A new outbound telemetry WebSocket session obtains a cryptographically random in-memory nonce.
+- Each publication contains an increasing sequence number and only registered sensor IDs.
+- The first release is bounded to 100 sensors, 32 KiB per reading batch, short text states, finite numeric values, and at most one publish per second.
+- HA marks each sensor unavailable after 15 seconds without a fresh value.
+- Admin-authorised revocation removes its paired device and entities.
+- No inbound Windows listener, MQTT requirement, native-token WebView bridge, or remote command execution.
+
+Work:
+- [x] Approve the telemetry and pairing protocol in ADR 0008.
+- [x] Implement stable installation identity and admin-authorised device registration.
+- [x] Bind paired devices to the Home Assistant user who authorised pairing.
+- [x] Implement owner-checked session creation, nonce rotation, sequence/replay protection, rate limits, payload limits and sensor-ID validation.
+- [x] Register the PC in the Home Assistant device registry and create dynamic sensor entities.
+- [x] Add individual sensor freshness/availability tracking and administrative revocation.
+- [x] Add a separate outbound telemetry WebSocket client; retain the existing state-change WebSocket for its own purpose.
+- [x] Add a Sensors-page publishing control with per-sensor selection, Pair/Update and Unpair actions.
+- [x] Persist the random installation ID, paired device ID and non-secret sensor selection; do not persist session nonces or readings.
+- [x] Add Python protocol unit tests and run them in Windows CI.
+- [ ] Validate the pairing flow and published entities against the user's live Home Assistant instance.
+- [ ] Validate Home Assistant restart, Windows sleep/resume, reconnect, revocation, non-admin pairing rejection and replay rejection end-to-end.
 
 Acceptance:
 - A paired PC appears as one device in Home Assistant.
-- Selected sensors create stable entities and update without duplicate entities after restart/re-pair.
-- Revoking a pairing stops publishing immediately.
+- Only user-selected sensors create stable entities and update without duplicate entities after restart/re-pair.
+- Each sensor becomes unavailable after 15 seconds without a fresh reading.
+- Revoking the pairing stops publishing and removes the PC entities/device.
 - No arbitrary command execution is possible through the telemetry channel.
-- The protocol has tests for invalid credentials, replay, oversized payloads, stale data, and reconnect.
+- Protocol tests cover invalid identities, metadata, values, replay/sequence, rate limits, oversized batches, stale data and reconnect.
+- Live pairing and lifecycle behaviour are confirmed on the user's HA installation before this milestone is called accepted.
 
 ### Milestone 4 — Native Windows control capabilities
 
@@ -379,9 +390,7 @@ The next work should be selected from this order unless new user feedback change
 
 ### Immediate next implementation slice
 
-The native dashboard selector is in open draft PR #18; the user confirmed the Control dashboard opens in the embedded dashboard view on Windows 11. Multi-view persistence and reconnect acceptance remain separate checks.
-
-The first Windows CPU + memory + uptime slice is in draft PR #19, stacked on PR #18. After Windows CI and review, the next sensor work is storage + network, then a provider registry and capability settings. Design the secure telemetry protocol before publishing any sensor to Home Assistant.
+Draft PR #21 contains the first secure HA pairing and publishing vertical slice, stacked on the validated sensor-provider work in PRs #18–#20. First validate CI and code review, then perform live pairing and revocation tests against the user's HA instance. After that, complete the provider registry, configurable sampling intervals, sensor enable/disable settings, and capability diagnostics. Only then proceed to native audio/media controls.
 
 ---
 
@@ -421,4 +430,5 @@ At the time of writing:
 - PR #18 — [native Home Assistant dashboard selector](https://github.com/remco59/ha-desktop-companion/pull/18) — open draft on `feat/native-dashboard-selector`. The user confirmed the Control dashboard opens in the embedded dashboard view on Windows 11 (2026-11-08); multi-view persistence and reconnect acceptance remain to be verified. Do not merge without explicit user permission.
 - PR #19 — [Windows CPU, memory, and uptime sensors](https://github.com/remco59/ha-desktop-companion/pull/19) — draft, stacked on PR #18. Windows CI and installer packaging passed; the user compared CPU, memory, and uptime with Windows Task Manager on Windows 11 and accepted the readings, including roughly one-second display lag.
 - PR #20 — [per-volume storage and per-adapter network sensors](https://github.com/remco59/ha-desktop-companion/pull/20) — draft, stacked on PR #19. Adds fixed/removable volume capacity/used/available/status and adapter status plus receive/send rates, with dynamic cards on the Sensors page.
+- PR #21 — [secure Home Assistant pairing and sensor publishing](https://github.com/remco59/ha-desktop-companion/pull/21) — draft, stacked on PR #20. Implements ADR 0008, HA device/entity registration, session-secured telemetry, Windows sensor selection/publishing controls, and Python protocol tests. Live pairing acceptance remains outstanding.
 - The current project plan is documentation, not permission to merge, release, or change production Home Assistant configuration.

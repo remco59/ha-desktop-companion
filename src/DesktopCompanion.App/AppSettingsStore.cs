@@ -12,6 +12,13 @@ internal static class AppSettingsStore
         "DesktopCompanion",
         "settings.json");
 
+    private static readonly string[] DefaultPublishedSensors =
+    [
+        "cpu_usage_percent",
+        "memory_usage_percent",
+        "system_uptime_seconds"
+    ];
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -24,6 +31,38 @@ internal static class AppSettingsStore
         DashboardSelection.Normalize(Load().Dashboards);
 
     public static string? LoadSelectedDashboardId() => Load().SelectedDashboardId;
+
+    public static string LoadOrCreateInstallationId()
+    {
+        var settings = Load();
+        if (Guid.TryParse(settings.InstallationId, out var existing))
+            return existing.ToString("D");
+
+        var installationId = Guid.NewGuid().ToString("D");
+        Save(current => current with { InstallationId = installationId });
+        return installationId;
+    }
+
+    public static string? LoadPairedDeviceId() => Load().PairedDeviceId;
+
+    public static IReadOnlyList<string> LoadPublishedSensorIds() =>
+        (Load().PublishedSensorIds ?? DefaultPublishedSensors)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+    public static void SavePairedDeviceId(string? deviceId) =>
+        Save(current => current with { PairedDeviceId = deviceId });
+
+    public static void SavePublishedSensorIds(IEnumerable<string> sensorIds) =>
+        Save(current => current with
+        {
+            PublishedSensorIds = sensorIds
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray()
+        });
 
     public static void SaveHomeAssistantUrl(string url) =>
         Save(current => current with { HomeAssistantUrl = url });
@@ -67,5 +106,8 @@ internal static class AppSettingsStore
         public string? HomeAssistantUrl { get; init; }
         public DashboardDefinition[]? Dashboards { get; init; }
         public string? SelectedDashboardId { get; init; }
+        public string? InstallationId { get; init; }
+        public string? PairedDeviceId { get; init; }
+        public string[]? PublishedSensorIds { get; init; }
     }
 }

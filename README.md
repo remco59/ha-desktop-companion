@@ -4,7 +4,7 @@ A native Windows companion for Home Assistant.
 
 Desktop Companion brings your Windows PC and smart home together in one approachable control centre. It is designed around a full Windows application and a configurable system-tray dashboard, with shared sensors, actions, widgets, and configuration.
 
-> **Project status:** Early preview. The native WinUI 3 shell, tray experience, Home Assistant OAuth/REST/WebSocket connection, and embedded WebView2 dashboard are implemented. Dashboard-only Kiosk Mode has been verified by the user on Windows 11. Windows sensor publishing, pairing, native Windows controls, and the broader roadmap remain in development. See the [Product Plan & Development Handoff](docs/product-plan.md) for current status and next steps.
+> **Project status:** Early preview. The native WinUI 3 shell, tray experience, Home Assistant OAuth/REST/WebSocket connection, embedded WebView2 dashboard, and Windows system sensors are implemented in the current draft PR stack. The user has verified the dashboard and CPU/memory/uptime readings on Windows 11. Secure Home Assistant device pairing and selected-sensor publishing are implemented in draft PR #21; live pairing against a real Home Assistant instance is still an acceptance test. Native Windows controls and the rest of the roadmap remain in development. See the [Product Plan & Development Handoff](docs/product-plan.md) for current status and next steps.
 
 ## Dashboard presentation
 
@@ -46,9 +46,22 @@ The [Product Plan & Development Handoff](docs/product-plan.md) is the source of 
 
 See [the implementation roadmap](docs/roadmap.md) and [architecture overview](docs/architecture/overview.md).
 
+## Home Assistant integration
+
+To prepare Home Assistant for Windows sensor pairing:
+
+1. Copy `integrations/homeassistant/custom_components/desktop_companion` into `<config>/custom_components/desktop_companion`.
+2. Restart Home Assistant.
+3. Open **Settings → Devices & services → Add integration** and add **Desktop Companion** once.
+4. Connect the Windows app to the same Home Assistant instance with an administrator account.
+5. Open **Sensors**, choose the readings to expose, and select **Pair with Home Assistant**.
+6. The Windows PC should appear as one Desktop Companion device. Only the selected sensors are published.
+
+The first pairing/publishing implementation is in draft PR #21 and has not yet been validated against the user's live Home Assistant instance. Do not use the workflow as a production security certification until that acceptance is complete. The app makes outbound connections only; it does not open an inbound Windows port.
+
 ## Building
 
-The Windows application is built on Windows with the .NET 10 SDK, Visual Studio 2026 (or an equivalent WinUI 3 toolchain), and Windows App SDK 2.6.5. Build instructions will be expanded as the project foundation lands.
+The Windows application is built on Windows with the .NET 10 SDK, Visual Studio 2026 (or an equivalent WinUI 3 toolchain), and Windows App SDK 2.6.5.
 
 ## Open source
 

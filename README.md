@@ -8,7 +8,7 @@ Desktop Companion brings your Windows PC and smart home together in one approach
 
 ## Dashboard presentation
 
-The embedded dashboard opens in dashboard-only mode by requesting the Home Assistant Kiosk Mode frontend resource with the `?kiosk` URL parameter. Install [**Kiosk Mode**](https://github.com/00-10-01-11/ha-kiosk-mode) through HACS in Home Assistant to hide Home Assistant's own header and navigation while keeping the actual Lovelace dashboard interactive. Without that frontend resource, Home Assistant displays its regular interface. The native Desktop Companion shell remains visible.
+The embedded dashboard opens in dashboard-only mode by requesting the Home Assistant Kiosk Mode frontend resource with the `?kiosk` URL parameter. Install [**Kiosk Mode**](https://github.com/NemesisRE/kiosk-mode) through HACS in Home Assistant to hide Home Assistant's own header and navigation while keeping the actual Lovelace dashboard interactive. Without that frontend resource, Home Assistant displays its regular interface. The native Desktop Companion shell remains visible.
 
 ## Product goals
 

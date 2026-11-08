@@ -10,5 +10,5 @@ public sealed record DashboardDefinition(
     bool IsDefault = false)
 {
     public static DashboardDefinition Default { get; } =
-        new("default", "Overview", "", "mdi:view-dashboard", 0, true);
+        new("control", "Control", "desktop-companion/control", "mdi:home-variant", 0, true);
 }

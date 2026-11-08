@@ -2,7 +2,7 @@
 
 ## Phase 0 — Technical validation
 
-- [ ] Validate the WinUI 3 application and native tray host.
+- [x] Validate the WinUI 3 application and native tray host build.
 - [ ] Verify Home Assistant OAuth/application authentication approach.
 - [ ] Specify and prototype the authenticated sensor telemetry bridge.
 - [ ] Verify basic Windows system sensor access without administrator elevation.
@@ -16,10 +16,12 @@
 - [x] Add first Windows system sensor provider scaffold.
 - [x] Add Home Assistant REST client foundation.
 - [x] Add Home Assistant integration scaffold.
-- [ ] Implement application host and background lifecycle.
-- [ ] Implement native tray host and compact pop-up.
+- [x] Add native tray icon host and tray pop-up window.
+- [x] Keep the main application alive when its window is closed.
+- [ ] Implement a full single-instance activation handoff.
+- [ ] Implement the application host and background lifecycle.
 - [ ] Add persistent settings and diagnostics.
-- [ ] Establish Windows CI build.
+- [ ] Establish the complete Windows CI/test matrix.
 
 ## Phase 2 — Home Assistant
 

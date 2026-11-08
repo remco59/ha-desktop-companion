@@ -68,7 +68,8 @@ Status legend:
 - [ ] Verify volume/mute behaviour against Windows Settings and hardware buttons on Windows 11.
 - [ ] Default audio output-device selection.
 - [ ] Media transport controls and now-playing metadata.
-- [ ] Application discovery and launch.
+- [x] Add local Start Menu application discovery, search and launch through validated shortcut identities (draft PR #23).
+- [ ] Verify discovered apps and launch behaviour on Windows 11; packaged Store apps without Start Menu shortcuts may not appear.
 - [ ] Focus/minimise/close application controls.
 - [ ] Per-application audio levels/output routing where supported.
 - [ ] Safe system actions with explicit opt-in and confirmation.

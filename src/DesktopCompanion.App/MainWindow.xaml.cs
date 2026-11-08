@@ -25,6 +25,7 @@ public sealed partial class MainWindow : Window
     private bool _homeAssistantDevicePaired;
     private bool _isUpdatingAudioControls;
     private bool _audioIsMuted;
+    private IReadOnlyList<InstalledApplication> _installedApplications = Array.Empty<InstalledApplication>();
 
     private IReadOnlyList<DashboardDefinition> _dashboards = [DashboardDefinition.Default];
     private DashboardDefinition _selectedDashboard = DashboardDefinition.Default;
@@ -59,6 +60,8 @@ public sealed partial class MainWindow : Window
     public event Action<double>? MasterVolumeChangeRequested;
     public event Action<bool>? AudioMuteChangeRequested;
     public event Action? AudioRefreshRequested;
+    public event Action? ApplicationsRefreshRequested;
+    public event Action<string>? ApplicationLaunchRequested;
 
     public void SetHomeAssistantUrl(string url) => HomeAssistantUrlInput.Text = url;
 
@@ -122,6 +125,103 @@ public sealed partial class MainWindow : Window
     public void ShowFromTray() { AppWindow.Show(); Activate(); }
     public void ShowSettingsFromTray() { ShowFromTray(); NavigateTo("Home Assistant"); }
     public void AllowClose() => _allowClose = true;
+
+    public void SetInstalledApplications(IReadOnlyList<InstalledApplication> applications)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            _installedApplications = applications
+                .OrderBy(application => application.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ToArray();
+            RenderApplicationCatalog();
+        });
+    }
+
+    public void SetApplicationCatalogStatus(string status)
+    {
+        DispatcherQueue.TryEnqueue(() => ApplicationCatalogStatusText.Text = status);
+    }
+
+    private void RenderApplicationCatalog()
+    {
+        ApplicationCatalogPanel.Children.Clear();
+        var searchText = ApplicationSearchBox.Text?.Trim();
+        var filtered = string.IsNullOrWhiteSpace(searchText)
+            ? _installedApplications
+            : _installedApplications
+                .Where(application => application.Name.Contains(searchText, StringComparison.CurrentCultureIgnoreCase))
+                .ToArray();
+
+        foreach (var application in filtered)
+        {
+            var name = new TextBlock
+            {
+                Text = application.Name,
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(Color.FromArgb(255, 245, 247, 250)),
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            var launch = new Button
+            {
+                Content = "Open",
+                Tag = application.Id,
+                Padding = new Thickness(14, 7, 14, 7),
+                Background = new SolidColorBrush(Color.FromArgb(255, 35, 94, 124)),
+                Foreground = new SolidColorBrush(Colors.White),
+                BorderThickness = new Thickness(0),
+                CornerRadius = new CornerRadius(7),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            launch.Click += OnLaunchApplicationClicked;
+
+            var grid = new Grid { ColumnSpacing = 10 };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.Children.Add(name);
+            Grid.SetColumn(launch, 1);
+            grid.Children.Add(launch);
+
+            ApplicationCatalogPanel.Children.Add(new Border
+            {
+                Background = new SolidColorBrush(Color.FromArgb(255, 37, 42, 51)),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(12, 8, 12, 8),
+                Child = grid
+            });
+        }
+
+        if (filtered.Count == 0)
+        {
+            var emptyText = new TextBlock
+            {
+                Text = _installedApplications.Count == 0
+                    ? "No Start Menu shortcuts were found."
+                    : "No applications match your search.",
+                FontSize = 12,
+                Foreground = new SolidColorBrush(Color.FromArgb(255, 167, 173, 183)),
+                TextWrapping = TextWrapping.Wrap
+            };
+            ApplicationCatalogPanel.Children.Add(emptyText);
+        }
+
+        ApplicationCatalogStatusText.Text = string.IsNullOrWhiteSpace(searchText)
+            ? $"{_installedApplications.Count} applications discovered from the Start Menu."
+            : $"{filtered.Count} of {_installedApplications.Count} applications match your search.";
+    }
+
+    private void OnApplicationSearchChanged(object sender, TextChangedEventArgs e) =>
+        RenderApplicationCatalog();
+
+    private void OnRefreshApplicationsClicked(object sender, RoutedEventArgs e) =>
+        ApplicationsRefreshRequested?.Invoke();
+
+    private void OnLaunchApplicationClicked(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string applicationId })
+            ApplicationLaunchRequested?.Invoke(applicationId);
+    }
 
     public void SetAudioEndpointState(AudioEndpointState state)
     {
@@ -793,7 +893,11 @@ public sealed partial class MainWindow : Window
             _ => "Desktop Companion"
         };
         SetNavigationSelection(page);
-        if (isApplicationsMedia) AudioRefreshRequested?.Invoke();
+        if (isApplicationsMedia)
+        {
+            AudioRefreshRequested?.Invoke();
+            ApplicationsRefreshRequested?.Invoke();
+        }
         if (isDashboard)
         {
             UpdateDashboardAvailability();

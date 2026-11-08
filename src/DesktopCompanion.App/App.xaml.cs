@@ -3,6 +3,7 @@ using DesktopCompanion.Core.Models;
 using DesktopCompanion.HomeAssistant.Authentication;
 using DesktopCompanion.HomeAssistant.Services;
 using DesktopCompanion.HomeAssistant.WebSocket;
+using DesktopCompanion.Windows.Applications;
 using DesktopCompanion.Windows.Audio;
 using DesktopCompanion.Windows.Security;
 using DesktopCompanion.Windows.Sensors;
@@ -20,6 +21,7 @@ public partial class App : Application
     private HomeAssistantConnectionSupervisor? _connectionSupervisor;
     private IHomeAssistantTelemetryClient? _telemetryClient;
     private IAudioControlService? _audioControlService;
+    private IApplicationCatalogService? _applicationCatalogService;
     private WindowsSensorMonitor? _sensorMonitor;
     private Task? _sensorMonitorStartTask;
     private SensorSample? _latestSensorSample;
@@ -49,8 +51,11 @@ public partial class App : Application
         _mainWindow.MasterVolumeChangeRequested += OnMasterVolumeChangeRequested;
         _mainWindow.AudioMuteChangeRequested += OnAudioMuteChangeRequested;
         _mainWindow.AudioRefreshRequested += OnAudioRefreshRequested;
+        _mainWindow.ApplicationsRefreshRequested += OnApplicationsRefreshRequested;
+        _mainWindow.ApplicationLaunchRequested += OnApplicationLaunchRequested;
 
         _audioControlService = new WindowsAudioControlService();
+        _applicationCatalogService = new WindowsStartMenuApplicationCatalogService();
         _telemetryClient = new HomeAssistantTelemetryWebSocketClient();
         _pairedDeviceId = AppSettingsStore.LoadPairedDeviceId();
         _mainWindow.UpdateHomeAssistantPublishingStatus(
@@ -84,6 +89,42 @@ public partial class App : Application
         _trayIconHost.Activated += (_, _) => ToggleTrayPopup();
         _trayIconHost.ContextRequested += (_, _) => ToggleTrayPopup();
         _mainWindow.Activate();
+    }
+
+    private async void OnApplicationsRefreshRequested() =>
+        await RefreshApplicationCatalogAsync();
+
+    private async void OnApplicationLaunchRequested(string applicationId) =>
+        await LaunchApplicationAsync(applicationId);
+
+    private async Task RefreshApplicationCatalogAsync()
+    {
+        if (_applicationCatalogService is null || _mainWindow is null) return;
+        _mainWindow.SetApplicationCatalogStatus("Discovering Start Menu applications…");
+        try
+        {
+            var applications = await _applicationCatalogService.GetApplicationsAsync();
+            _mainWindow.SetInstalledApplications(applications);
+        }
+        catch (Exception exception)
+        {
+            _mainWindow.SetApplicationCatalogStatus($"Could not discover applications: {exception.Message}");
+        }
+    }
+
+    private async Task LaunchApplicationAsync(string applicationId)
+    {
+        if (_applicationCatalogService is null || _mainWindow is null) return;
+        _mainWindow.SetApplicationCatalogStatus("Starting application…");
+        try
+        {
+            await _applicationCatalogService.LaunchAsync(applicationId);
+            _mainWindow.SetApplicationCatalogStatus("Windows accepted the application launch request.");
+        }
+        catch (Exception exception)
+        {
+            _mainWindow.SetApplicationCatalogStatus($"Could not start the application: {exception.Message}");
+        }
     }
 
     private async void OnAudioRefreshRequested() =>

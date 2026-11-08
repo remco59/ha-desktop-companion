@@ -192,7 +192,7 @@ Acceptance:
 
 **Goal:** Show reliable Windows PC telemetry in Desktop Companion and prepare it for Home Assistant publishing.
 
-Current implementation note (2026-11-08): the first CPU + physical-memory + uptime slice is being delivered in draft PR #19, stacked on dashboard PR #18. It uses Windows kernel APIs, a two-second sampler, stale-reading retention, and a native Sensors page plus Overview summaries. CI success will validate compilation and pure CPU-calculation tests; real sensor values still require Windows acceptance.
+Current implementation note (2026-11-08): the first CPU + physical-memory + uptime slice is implemented in draft PR #19, stacked on dashboard PR #18. The user compared it with Windows Task Manager on Windows 11 and confirmed CPU (about 23% vs 21.9%), memory (55% vs 54.7%), and uptime (9h22) are consistent. Approximately one second of display lag is acceptable. The two-second sampling cadence remains unchanged. Storage and network are the next implementation slice.
 
 Initial sensor set:
 - CPU utilisation.
@@ -217,6 +217,8 @@ Work:
 - [ ] Add capability diagnostics for optional hardware providers; keep GPU, temperatures, and fan speeds unavailable until a supported provider exists.
 
 Acceptance:
+- [x] CPU and physical-memory readings were compared with Windows Task Manager on Windows 11 and accepted by the user (2026-11-08); around one second of display lag is acceptable.
+- [x] Uptime display was compared with Windows Task Manager and matched (9h22 at validation).
 - Sensor readings are accurate enough for monitoring, timestamped, and refresh without freezing the UI.
 - Missing GPU/temperature support does not break CPU, memory, storage, or network.
 - CPU usage sampling does not report an unprimed first counter value as real usage.
@@ -416,5 +418,5 @@ At the time of writing:
 - Windows CI for the current main commit passed in run [#42522021504](https://github.com/remco59/ha-desktop-companion/actions/runs/42522021504). Windows Package also passed for the preceding dashboard PR head [#42521816660](https://github.com/remco59/ha-desktop-companion/actions/runs/42521816660).
 - Real in-place installer upgrade acceptance remains outstanding and must stay visible until tested on Windows.
 - PR #18 — [native Home Assistant dashboard selector](https://github.com/remco59/ha-desktop-companion/pull/18) — open draft on `feat/native-dashboard-selector`. The user confirmed the Control dashboard opens in the embedded dashboard view on Windows 11 (2026-11-08); multi-view persistence and reconnect acceptance remain to be verified. Do not merge without explicit user permission.
-- PR #19 — [Windows CPU, memory, and uptime sensors](https://github.com/remco59/ha-desktop-companion/pull/19) — draft, stacked on PR #18. It adds the first Windows sensor provider, background sampling, stale-reading feedback, and the native Sensors page. Real telemetry accuracy still requires Windows validation.
+- PR #19 — [Windows CPU, memory, and uptime sensors](https://github.com/remco59/ha-desktop-companion/pull/19) — draft, stacked on PR #18. Windows CI and installer packaging passed; the user compared CPU, memory, and uptime with Windows Task Manager on Windows 11 and accepted the readings, including the roughly one-second display lag. Storage/network sensors remain the next slice.
 - The current project plan is documentation, not permission to merge, release, or change production Home Assistant configuration.

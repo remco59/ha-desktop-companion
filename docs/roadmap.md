@@ -46,7 +46,8 @@ Status legend:
 - [x] Add a two-second sampler with last-known reading retention and explicit stale status.
 - [ ] Add provider registry, configurable sampling intervals, and sensor enable/disable preferences.
 - [x] Build the initial native Sensors page and CPU/memory/uptime Overview summaries.
-- [ ] Verify sensor values, first-sample CPU priming, tray sampling, and stale/error behaviour on Windows 11 hardware.
+- [x] Compare CPU, memory, and uptime readings with Windows Task Manager on Windows 11; user accepted the values and approximately one-second display lag (2026-11-08).
+- [ ] Verify sampling while in the tray and stale/error behaviour on Windows 11 hardware.
 
 ## Phase 3 — Secure Home Assistant pairing and telemetry
 

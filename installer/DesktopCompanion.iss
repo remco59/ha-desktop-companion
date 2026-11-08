@@ -19,7 +19,10 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayName=Desktop Companion
-CloseApplications=yes
+; The main window normally hides to the tray when closed. During upgrades,
+; Restart Manager must be allowed to force-close the app after its normal close
+; request fails, otherwise the tray process can keep published files locked.
+CloseApplications=force
 RestartApplications=no
 Uninstallable=yes
 

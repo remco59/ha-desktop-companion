@@ -54,12 +54,13 @@ Status legend:
 ## Phase 3 — Secure Home Assistant pairing and telemetry
 
 - [x] Add the Home Assistant custom-integration scaffold and initial config flow.
-- [ ] Write and approve a telemetry/pairing protocol ADR before implementing publishing.
-- [ ] Define device identity, pairing, authentication, replay protection, revocation, rate limits, payload limits, and availability.
-- [ ] Pair the Windows PC as a Home Assistant device.
-- [ ] Publish initial selected sensor entities with stable metadata and availability.
-- [ ] Add sensor selection and publishing controls.
-- [ ] Add tests for invalid credentials, replay, oversized payloads, stale data, and reconnect.
+- [x] Write and approve the telemetry/pairing protocol in ADR 0008.
+- [x] Define device identity, admin-authorised pairing, owner binding, nonce sessions, replay protection, revocation, rate limits, payload limits, and per-sensor availability.
+- [x] Implement the Home Assistant custom WebSocket commands and Windows outbound telemetry client in draft PR #21.
+- [x] Add Home Assistant device registration and dynamic sensor entities.
+- [x] Add Windows sensor selection, Pair/Update, Unpair, and automatic selected-sensor publishing controls.
+- [x] Add pure Python protocol tests to Windows CI.
+- [ ] Validate live pairing, actual entities, Home Assistant restart/reconnect, and revocation on the user's instance.
 
 ## Phase 4 — Native Windows control
 
@@ -109,8 +110,8 @@ Status legend:
 
 ## Next implementation slice
 
-The dashboard selector is in open draft PR #18; the user confirmed the Control dashboard renders on Windows 11. Multi-view persistence and reconnect acceptance remain open.
+PR #21 is the first secure Home Assistant pairing and sensor-publishing slice, stacked on PR #20. It implements ADR 0008, device registration, selected sensor entities, a separate outbound telemetry WebSocket and per-sensor availability. Live HA pairing, reconnect, restart and revoke tests remain to be completed.
 
-CPU, memory and uptime are implemented in draft PR #19 and were validated against Windows Task Manager on Windows 11. Per-volume storage and per-adapter network sensors are in draft PR #20, stacked on PR #19. Next add provider registration, configurable sampling intervals, sensor enable/disable preferences, and capability diagnostics. Design the secure telemetry protocol before publishing sensors to Home Assistant.
+After that acceptance, complete the provider registry, configurable sampling intervals, sensor enable/disable preferences and capability diagnostics. Then proceed to native Windows audio and media controls.
 
 See [the Product Plan](product-plan.md) for scope, implementation notes, acceptance criteria, and the session restart checklist.

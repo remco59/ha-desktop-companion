@@ -19,6 +19,7 @@ public sealed partial class MainWindow : Window
         "WebView2");
     private readonly Dictionary<string, StorageSensorCard> _storageSensorCards = new(StringComparer.Ordinal);
     private readonly Dictionary<string, NetworkSensorCard> _networkSensorCards = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, CheckBox> _sensorPublishingCheckBoxes = new(StringComparer.Ordinal);
 
     private IReadOnlyList<DashboardDefinition> _dashboards = [DashboardDefinition.Default];
     private DashboardDefinition _selectedDashboard = DashboardDefinition.Default;
@@ -39,10 +40,17 @@ public sealed partial class MainWindow : Window
         UptimeValue.Text = FormatUptime();
         SetNavigationSelection(_currentPage);
         SetDashboardDefinitions(AppSettingsStore.LoadDashboards(), AppSettingsStore.LoadSelectedDashboardId());
+        var pairedDeviceId = AppSettingsStore.LoadPairedDeviceId();
+        UpdateHomeAssistantPublishingStatus(
+            pairedDeviceId is null ? "Not paired · readings stay on this PC" : "Paired · waiting for Home Assistant connection",
+            paired: pairedDeviceId is not null,
+            connected: false);
     }
 
     public event Action<Uri>? ConnectHomeAssistantRequested;
     public event Action? DisconnectHomeAssistantRequested;
+    public event Action<IReadOnlyCollection<string>>? PairSensorsRequested;
+    public event Action? UnpairSensorsRequested;
 
     public void SetHomeAssistantUrl(string url) => HomeAssistantUrlInput.Text = url;
 
@@ -132,6 +140,7 @@ public sealed partial class MainWindow : Window
         DispatcherQueue.TryEnqueue(() =>
         {
             EnsureAdditionalSensorCards(sample.Sensors);
+            EnsureSensorPublishingOptions(sample.Sensors);
 
             var cpu = FindReading(sample, "cpu_usage_percent");
             var memory = FindReading(sample, "memory_usage_percent");
@@ -181,6 +190,63 @@ public sealed partial class MainWindow : Window
             SensorLastUpdatedText.Text = $"Last sample {sample.SampledAt.ToLocalTime():HH:mm:ss} · updates every 2 seconds";
         });
     }
+
+    private void EnsureSensorPublishingOptions(IReadOnlyCollection<SensorDescriptor> sensors)
+    {
+        var selectedIds = AppSettingsStore.LoadPublishedSensorIds().ToHashSet(StringComparer.Ordinal);
+        foreach (var sensor in sensors.Where(item => item.IsAvailable && item.Definition.IsEnabled))
+        {
+            var id = sensor.Definition.Id;
+            if (_sensorPublishingCheckBoxes.ContainsKey(id))
+                continue;
+
+            var label = string.IsNullOrWhiteSpace(sensor.Definition.Unit)
+                ? sensor.Definition.Name
+                : $"{sensor.Definition.Name} ({sensor.Definition.Unit})";
+            var checkBox = new CheckBox
+            {
+                Content = label,
+                Tag = id,
+                IsChecked = selectedIds.Contains(id),
+                Foreground = new SolidColorBrush(Color.FromArgb(255, 223, 227, 232)),
+                FontSize = 12,
+                MinHeight = 30
+            };
+            _sensorPublishingCheckBoxes.Add(id, checkBox);
+            SensorPublishingSelectionPanel.Children.Add(checkBox);
+        }
+    }
+
+    public void UpdateHomeAssistantPublishingStatus(string status, bool paired, bool connected)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            SensorPublishingStatusText.Text = status;
+            PairSensorsButton.Content = paired ? "Update published sensors" : "Pair with Home Assistant";
+            PairSensorsButton.IsEnabled = connected && _sensorPublishingCheckBoxes.Count > 0;
+            UnpairSensorsButton.IsEnabled = connected && paired;
+        });
+    }
+
+    private void OnPairSensorsClicked(object sender, RoutedEventArgs e)
+    {
+        var selectedIds = _sensorPublishingCheckBoxes
+            .Where(pair => pair.Value.IsChecked == true)
+            .Select(pair => pair.Key)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+
+        if (selectedIds.Length == 0)
+        {
+            SensorPublishingStatusText.Text = "Select at least one sensor to share with Home Assistant.";
+            return;
+        }
+
+        PairSensorsRequested?.Invoke(selectedIds);
+    }
+
+    private void OnUnpairSensorsClicked(object sender, RoutedEventArgs e) =>
+        UnpairSensorsRequested?.Invoke();
 
     private void EnsureAdditionalSensorCards(IReadOnlyCollection<SensorDescriptor> sensors)
     {

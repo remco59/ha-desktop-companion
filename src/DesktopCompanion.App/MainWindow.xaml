@@ -291,6 +291,26 @@
                         <StackPanel x:Name="NetworkSensorCardsPanel" Spacing="8" />
                     </StackPanel>
                     <Border Background="#1C1F26" CornerRadius="12" Padding="18">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Home Assistant publishing" FontSize="16" FontWeight="SemiBold" Foreground="White" />
+                            <TextBlock Text="Choose which Windows readings Desktop Companion shares with your Home Assistant device."
+                                       FontSize="12" Foreground="#A7ADB7" TextWrapping="Wrap" />
+                            <TextBlock x:Name="SensorPublishingStatusText" Text="Not paired · readings stay on this PC"
+                                       FontSize="11" Foreground="#A7ADB7" TextWrapping="Wrap" />
+                            <StackPanel x:Name="SensorPublishingSelectionPanel" Spacing="3" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button x:Name="PairSensorsButton" Content="Pair with Home Assistant"
+                                        Click="OnPairSensorsClicked"
+                                        Background="#1688B8" Foreground="White" BorderThickness="0"
+                                        CornerRadius="8" Padding="14,8" IsEnabled="False" />
+                                <Button x:Name="UnpairSensorsButton" Content="Unpair PC"
+                                        Click="OnUnpairSensorsClicked"
+                                        Background="#2A3038" Foreground="#DFE3E8" BorderThickness="0"
+                                        CornerRadius="8" Padding="14,8" IsEnabled="False" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#1C1F26" CornerRadius="12" Padding="18">
                         <StackPanel Spacing="7">
                             <TextBlock Text="System information" FontSize="15" FontWeight="SemiBold" Foreground="White" />
                             <TextBlock x:Name="SensorComputerNameValue" Text="Computer name: —" FontSize="12" Foreground="#DFE3E8" />

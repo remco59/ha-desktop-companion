@@ -1,0 +1,16 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Desktop Companion",
+        "description": "Add the integration once. Pair your Windows PC from Desktop Companion after setup.",
+        "data": {
+          "name": "Integration name"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Desktop Companion is already configured."
+    }
+  }
+}

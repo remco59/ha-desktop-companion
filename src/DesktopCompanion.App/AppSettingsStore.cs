@@ -1,4 +1,6 @@
 using System.Text.Json;
+using DesktopCompanion.Core.Dashboards;
+using DesktopCompanion.Core.Models;
 
 namespace DesktopCompanion.App;
 
@@ -10,28 +12,60 @@ internal static class AppSettingsStore
         "DesktopCompanion",
         "settings.json");
 
-    public static string? LoadHomeAssistantUrl()
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        WriteIndented = true
+    };
+
+    public static string? LoadHomeAssistantUrl() => Load().HomeAssistantUrl;
+
+    public static IReadOnlyList<DashboardDefinition> LoadDashboards() =>
+        DashboardSelection.Normalize(Load().Dashboards);
+
+    public static string? LoadSelectedDashboardId() => Load().SelectedDashboardId;
+
+    public static void SaveHomeAssistantUrl(string url) =>
+        Save(current => current with { HomeAssistantUrl = url });
+
+    public static void SaveDashboardSettings(
+        IReadOnlyList<DashboardDefinition> dashboards,
+        string selectedDashboardId) =>
+        Save(current => current with
+        {
+            Dashboards = DashboardSelection.Normalize(dashboards).ToArray(),
+            SelectedDashboardId = selectedDashboardId
+        });
+
+    private static SettingsDocument Load()
     {
         try
         {
-            if (!File.Exists(SettingsPath)) return null;
-            var settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(SettingsPath));
-            return settings?.HomeAssistantUrl;
+            if (!File.Exists(SettingsPath)) return new SettingsDocument();
+            return JsonSerializer.Deserialize<SettingsDocument>(File.ReadAllText(SettingsPath), JsonOptions)
+                   ?? new SettingsDocument();
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException)
         {
-            return null;
+            return new SettingsDocument();
         }
     }
 
-    public static void SaveHomeAssistantUrl(string url)
+    private static void Save(Func<SettingsDocument, SettingsDocument> update)
     {
+        var current = Load();
+        var next = update(current);
         var directory = Path.GetDirectoryName(SettingsPath)!;
         Directory.CreateDirectory(directory);
         var temporaryPath = SettingsPath + ".tmp";
-        File.WriteAllText(temporaryPath, JsonSerializer.Serialize(new AppSettings(url)));
+        File.WriteAllText(temporaryPath, JsonSerializer.Serialize(next, JsonOptions));
         File.Move(temporaryPath, SettingsPath, overwrite: true);
     }
 
-    private sealed record AppSettings(string HomeAssistantUrl);
+    private sealed record SettingsDocument
+    {
+        public string? HomeAssistantUrl { get; init; }
+        public DashboardDefinition[]? Dashboards { get; init; }
+        public string? SelectedDashboardId { get; init; }
+    }
 }

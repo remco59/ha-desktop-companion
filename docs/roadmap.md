@@ -23,16 +23,18 @@ Status legend:
 - [ ] Verify a real in-place installer upgrade on Windows, including when Desktop Companion is running in the tray.
 - [ ] Implement single-instance activation handoff.
 - [ ] Add structured diagnostics without logging tokens, cookies, or private entity payloads.
-- [ ] Establish automated test coverage for pure URL, state, and service logic.
+- [x] Add automated test project for dashboard URL composition and dashboard selection logic.
+- [ ] Expand automated test coverage for remaining pure state and service logic.
 
 ## Phase 1 — Finish the native dashboard experience
 
 - [x] Embed the actual Home Assistant dashboard rather than reimplementing Lovelace.
 - [x] Hide Home Assistant's own header/sidebar with Kiosk Mode when its frontend resource is installed.
-- [ ] Add a native dashboard selector for configured Home Assistant dashboards/views.
-- [ ] Remember the selected dashboard and provide a return-to-default action.
-- [ ] Preserve reverse-proxy paths, existing query parameters, and Kiosk Mode behaviour when switching dashboards.
-- [ ] Add resilient loading, offline, error, and reconnect states.
+- [x] Add a native dashboard selector for configured Home Assistant dashboards/views.
+- [x] Remember the selected dashboard and provide a return-to-default action.
+- [x] Preserve reverse-proxy paths, existing query parameters, and Kiosk Mode behaviour when switching dashboards.
+- [x] Add dashboard navigation/loading/error feedback while reusing the persistent WebView2 session.
+- [ ] Verify dashboard switching and reconnection behaviour against the live Home Assistant instance on Windows.
 
 ## Phase 2 — Windows sensor engine
 
@@ -101,6 +103,6 @@ Status legend:
 
 ## Next implementation slice
 
-After the current PR stack is reviewed and integrated with the user's explicit approval, start with the **native dashboard selector**. Then implement the first Windows sensor vertical slice (CPU + memory + uptime). Design the secure telemetry protocol before publishing any sensor to Home Assistant.
+The native dashboard selector is implemented on `feat/native-dashboard-selector` and awaits Windows CI and real Home Assistant validation. After review/merge approval, implement the first Windows sensor vertical slice (CPU + memory + uptime). Design the secure telemetry protocol before publishing any sensor to Home Assistant.
 
 See [the Product Plan](product-plan.md) for scope, implementation notes, acceptance criteria, and the session restart checklist.

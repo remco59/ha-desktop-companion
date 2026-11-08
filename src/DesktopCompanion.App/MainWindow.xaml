@@ -247,10 +247,21 @@
                             <TextBlock x:Name="DashboardStatusText" Text="Ready to load your dashboard"
                                        FontSize="11" Foreground="#A7ADB7" />
                         </StackPanel>
-                        <Button Grid.Column="1" Content="Refresh" Click="OnRefreshDashboardClicked"
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <ComboBox x:Name="DashboardSelector" Width="210" MinWidth="160"
+                                      PlaceholderText="Select dashboard"
+                                      SelectionChanged="OnDashboardSelectionChanged"
+                                      AutomationProperties.Name="Home Assistant dashboard"
+                                      Background="#20242B" Foreground="White" />
+                            <Button x:Name="DefaultDashboardButton" Content="Default"
+                                    Click="OnDefaultDashboardClicked"
+                                    Background="#2A3038" Foreground="#DFE3E8" BorderThickness="0"
+                                    CornerRadius="8" Padding="12,8" />
+                        </StackPanel>
+                        <Button Grid.Column="2" Content="Refresh" Click="OnRefreshDashboardClicked"
                                 Background="#2A3038" Foreground="#DFE3E8" BorderThickness="0"
                                 CornerRadius="8" Padding="13,8" />
-                        <Button Grid.Column="2" Content="Open in browser" Click="OnOpenDashboardInBrowserClicked"
+                        <Button Grid.Column="3" Content="Open in browser" Click="OnOpenDashboardInBrowserClicked"
                                 Background="#2A3038" Foreground="#DFE3E8" BorderThickness="0"
                                 CornerRadius="8" Padding="13,8" />
                     </Grid>

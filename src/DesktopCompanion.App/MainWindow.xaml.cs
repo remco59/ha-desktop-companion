@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using DesktopCompanion.Core.Dashboards;
+using DesktopCompanion.Core.Models;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -16,11 +18,15 @@ public sealed partial class MainWindow : Window
         "DesktopCompanion",
         "WebView2");
 
+    private IReadOnlyList<DashboardDefinition> _dashboards = [DashboardDefinition.Default];
+    private DashboardDefinition _selectedDashboard = DashboardDefinition.Default;
+    private Uri? _instanceUri;
+    private Uri? _dashboardUri;
+    private Uri? _lastNavigatedDashboardUri;
     private bool _allowClose;
     private bool _webViewInitialized;
     private bool _webViewInitializing;
-    private Uri? _dashboardUri;
-    private Uri? _lastNavigatedDashboardUri;
+    private bool _dashboardSelectionInitialized;
     private string _currentPage = "Overview";
 
     public MainWindow()
@@ -29,6 +35,7 @@ public sealed partial class MainWindow : Window
         AppWindow.Closing += OnAppWindowClosing;
         UptimeValue.Text = FormatUptime();
         SetNavigationSelection(_currentPage);
+        SetDashboardDefinitions(AppSettingsStore.LoadDashboards(), AppSettingsStore.LoadSelectedDashboardId());
     }
 
     public event Action<Uri>? ConnectHomeAssistantRequested;
@@ -36,29 +43,50 @@ public sealed partial class MainWindow : Window
 
     public void SetHomeAssistantUrl(string url) => HomeAssistantUrlInput.Text = url;
 
-    /// <summary>
-    /// Sets the Home Assistant frontend URL. The embedded browser keeps its own
-    /// persistent profile and never receives the native OAuth access/refresh tokens.
-    /// </summary>
+    public void SetDashboardDefinitions(IEnumerable<DashboardDefinition>? dashboards, string? selectedDashboardId = null)
+    {
+        _dashboards = DashboardSelection.Normalize(dashboards);
+        _selectedDashboard = DashboardSelection.Select(_dashboards, selectedDashboardId);
+        _dashboardSelectionInitialized = false;
+
+        DashboardSelector.Items.Clear();
+        foreach (var dashboard in _dashboards)
+            DashboardSelector.Items.Add(new ComboBoxItem { Content = dashboard.Name, Tag = dashboard.Id });
+
+        var index = _dashboards.ToList().FindIndex(item => item.Id == _selectedDashboard.Id);
+        DashboardSelector.SelectedIndex = index < 0 ? 0 : index;
+        _dashboardSelectionInitialized = true;
+        UpdateDefaultDashboardButton();
+        UpdateDashboardUri();
+    }
+
+    public void SetSelectedDashboard(string? dashboardId)
+    {
+        _selectedDashboard = DashboardSelection.Select(_dashboards, dashboardId);
+        _dashboardSelectionInitialized = false;
+        DashboardSelector.SelectedIndex = _dashboards.ToList().FindIndex(item => item.Id == _selectedDashboard.Id);
+        _dashboardSelectionInitialized = true;
+        UpdateDefaultDashboardButton();
+        UpdateDashboardUri();
+    }
+
+    public string SelectedDashboardId => _selectedDashboard.Id;
+
+    /// <summary>Sets the Home Assistant base URL. WebView2 retains its separate persistent profile.</summary>
     public void SetDashboardUri(Uri? uri)
     {
         if (uri is not null &&
             (!uri.IsAbsoluteUri ||
              (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)))
-        {
             throw new ArgumentException("The Home Assistant dashboard URL must use HTTP or HTTPS.", nameof(uri));
-        }
 
-        _dashboardUri = uri is null ? null : EnsureTrailingSlash(uri);
+        _instanceUri = uri;
         _lastNavigatedDashboardUri = null;
-
+        UpdateDashboardUri();
         DispatcherQueue.TryEnqueue(() =>
         {
             UpdateDashboardAvailability();
-            if (_currentPage == "Dashboard" && _dashboardUri is not null)
-            {
-                _ = LoadDashboardAsync();
-            }
+            if (_currentPage == "Dashboard") _ = LoadDashboardAsync();
         });
     }
 
@@ -67,25 +95,13 @@ public sealed partial class MainWindow : Window
     public async Task ClearDashboardSessionAsync()
     {
         if (!_webViewInitialized) return;
-
-        await HomeAssistantWebView.CoreWebView2.Profile.ClearBrowsingDataAsync(
-            CoreWebView2BrowsingDataKinds.AllProfile);
+        await HomeAssistantWebView.CoreWebView2.Profile.ClearBrowsingDataAsync(CoreWebView2BrowsingDataKinds.AllProfile);
         HomeAssistantWebView.CoreWebView2.Navigate("about:blank");
         _lastNavigatedDashboardUri = null;
     }
 
-    public void ShowFromTray()
-    {
-        AppWindow.Show();
-        Activate();
-    }
-
-    public void ShowSettingsFromTray()
-    {
-        ShowFromTray();
-        NavigateTo("Home Assistant");
-    }
-
+    public void ShowFromTray() { AppWindow.Show(); Activate(); }
+    public void ShowSettingsFromTray() { ShowFromTray(); NavigateTo("Home Assistant"); }
     public void AllowClose() => _allowClose = true;
 
     public void UpdateConnectionStatus(string title, string detail, bool connected, bool busy = false)
@@ -97,13 +113,11 @@ public sealed partial class MainWindow : Window
             OverviewConnectionDetail.Text = detail;
             ConnectionStatusDetail.Text = detail;
             SidebarConnectionText.Text = connected ? "Connected" : busy ? "Connecting…" : title;
-
             var statusColor = connected
                 ? Color.FromArgb(255, 76, 175, 80)
                 : Color.FromArgb(255, 224, 169, 77);
             ConnectionStatusDot.Fill = new SolidColorBrush(statusColor);
             SidebarConnectionDot.Fill = new SolidColorBrush(statusColor);
-
             ConnectHomeAssistantButton.IsEnabled = !busy;
             ConnectHomeAssistantButton.Content = busy ? "Connecting…" : "Connect Home Assistant";
             DisconnectHomeAssistantButton.IsEnabled = connected;
@@ -126,26 +140,19 @@ public sealed partial class MainWindow : Window
 
     private void OnNavigationClicked(object sender, RoutedEventArgs e)
     {
-        if (sender is Button { Tag: string page })
-        {
-            NavigateTo(page);
-        }
+        if (sender is Button { Tag: string page }) NavigateTo(page);
     }
 
     private void OnConnectHomeAssistantClicked(object sender, RoutedEventArgs e)
     {
         var value = HomeAssistantUrlInput.Text?.Trim();
-        if (string.IsNullOrWhiteSpace(value) ||
-            !Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
+        if (string.IsNullOrWhiteSpace(value) || !Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
             (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
-            UpdateConnectionStatus(
-                "Check the instance URL",
-                "Enter a complete URL beginning with http:// or https://.",
-                connected: false);
+            UpdateConnectionStatus("Check the instance URL",
+                "Enter a complete URL beginning with http:// or https://.", connected: false);
             return;
         }
-
         ConnectHomeAssistantRequested?.Invoke(EnsureTrailingSlash(uri));
     }
 
@@ -155,76 +162,84 @@ public sealed partial class MainWindow : Window
     private void OnOpenConnectionSettingsClicked(object sender, RoutedEventArgs e) =>
         NavigateTo("Home Assistant");
 
+    private void OnDashboardSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_dashboardSelectionInitialized || DashboardSelector.SelectedItem is not ComboBoxItem { Tag: string id })
+            return;
+        var selected = DashboardSelection.Select(_dashboards, id);
+        if (selected.Id == _selectedDashboard.Id) return;
+        _selectedDashboard = selected;
+        UpdateDefaultDashboardButton();
+        UpdateDashboardUri();
+        AppSettingsStore.SaveDashboardSettings(_dashboards, _selectedDashboard.Id);
+        if (_currentPage == "Dashboard") _ = LoadDashboardAsync();
+    }
+
+    private void OnDefaultDashboardClicked(object sender, RoutedEventArgs e)
+    {
+        var defaultDashboard = _dashboards.First(item => item.IsDefault);
+        if (_selectedDashboard.Id == defaultDashboard.Id) return;
+        SetSelectedDashboard(defaultDashboard.Id);
+        AppSettingsStore.SaveDashboardSettings(_dashboards, _selectedDashboard.Id);
+        if (_currentPage == "Dashboard") _ = LoadDashboardAsync();
+    }
+
+    private void UpdateDefaultDashboardButton() =>
+        DefaultDashboardButton.IsEnabled = _dashboards.Any(item => item.IsDefault && item.Id != _selectedDashboard.Id);
+
+    private void UpdateDashboardUri()
+    {
+        _dashboardUri = _instanceUri is null
+            ? null
+            : DashboardUrlComposer.Compose(_instanceUri, _selectedDashboard.Path);
+        _lastNavigatedDashboardUri = null;
+    }
+
     private async void OnRefreshDashboardClicked(object sender, RoutedEventArgs e)
     {
-        if (_dashboardUri is null)
-        {
-            NavigateTo("Home Assistant");
-            return;
-        }
-
+        if (_dashboardUri is null) { NavigateTo("Home Assistant"); return; }
         try
         {
             await EnsureDashboardWebViewAsync();
             HomeAssistantWebView.CoreWebView2.Reload();
-            DashboardStatusText.Text = "Refreshing Home Assistant…";
+            DashboardStatusText.Text = $"Refreshing {_selectedDashboard.Name}…";
         }
-        catch (Exception exception)
-        {
-            ShowDashboardError(exception);
-        }
+        catch (Exception exception) { ShowDashboardError(exception); }
     }
 
     private void OnOpenDashboardInBrowserClicked(object sender, RoutedEventArgs e)
     {
         if (_dashboardUri is null) return;
-
         try
         {
-            var url = HomeAssistantWebView.CoreWebView2?.Source ?? _dashboardUri.AbsoluteUri;
+            var url = HomeAssistantWebView.CoreWebView2?.Source;
+            if (string.IsNullOrWhiteSpace(url)) url = DashboardUrlComposer.Compose(_instanceUri!, _selectedDashboard.Path).AbsoluteUri;
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
-        catch (Exception exception)
-        {
-            DashboardStatusText.Text = $"Could not open the browser: {exception.Message}";
-        }
+        catch (Exception exception) { DashboardStatusText.Text = $"Could not open the browser: {exception.Message}"; }
     }
 
     private async Task LoadDashboardAsync()
     {
-        if (_dashboardUri is null)
-        {
-            UpdateDashboardAvailability();
-            return;
-        }
-
+        if (_dashboardUri is null) { UpdateDashboardAvailability(); return; }
         if (_webViewInitializing) return;
-
-        if (_webViewInitialized &&
-            _lastNavigatedDashboardUri is not null &&
-            Uri.Compare(_lastNavigatedDashboardUri, _dashboardUri,
-                UriComponents.AbsoluteUri, UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase) == 0)
-        {
+        if (_webViewInitialized && _lastNavigatedDashboardUri is not null &&
+            Uri.Compare(_lastNavigatedDashboardUri, _dashboardUri, UriComponents.AbsoluteUri,
+                UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase) == 0)
             return;
-        }
 
         try
         {
             DashboardUnavailableOverlay.Visibility = Visibility.Collapsed;
             HomeAssistantWebView.Visibility = Visibility.Visible;
-            DashboardStatusText.Text = "Preparing Home Assistant…";
-
+            DashboardStatusText.Text = $"Preparing {_selectedDashboard.Name}…";
             await EnsureDashboardWebViewAsync();
-
-            var target = AddKioskModeParameter(_dashboardUri).AbsoluteUri;
+            var target = _dashboardUri.AbsoluteUri;
             _lastNavigatedDashboardUri = _dashboardUri;
-            DashboardStatusText.Text = "Loading your Home Assistant dashboard…";
+            DashboardStatusText.Text = $"Loading {_selectedDashboard.Name}…";
             HomeAssistantWebView.CoreWebView2.Navigate(target);
         }
-        catch (Exception exception)
-        {
-            ShowDashboardError(exception);
-        }
+        catch (Exception exception) { ShowDashboardError(exception); }
     }
 
     private async Task EnsureDashboardWebViewAsync()
@@ -232,13 +247,7 @@ public sealed partial class MainWindow : Window
         if (_webViewInitialized) return;
         if (_webViewInitializing)
         {
-            // There is only one XAML/UI thread. Yield briefly through the dispatcher
-            // rather than starting a second WebView2 initialization.
-            while (_webViewInitializing && !_webViewInitialized)
-            {
-                await Task.Delay(50);
-            }
-
+            while (_webViewInitializing && !_webViewInitialized) await Task.Delay(50);
             if (_webViewInitialized) return;
         }
 
@@ -246,17 +255,9 @@ public sealed partial class MainWindow : Window
         try
         {
             Directory.CreateDirectory(_webViewUserDataFolder);
-
-            // Fail early with a clear UI message if the Evergreen WebView2 Runtime
-            // is missing. Windows 11 normally includes it.
             _ = CoreWebView2Environment.GetAvailableBrowserVersionString();
-
-            Environment.SetEnvironmentVariable(
-                "WEBVIEW2_USER_DATA_FOLDER",
-                _webViewUserDataFolder,
-                EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", _webViewUserDataFolder, EnvironmentVariableTarget.Process);
             await HomeAssistantWebView.EnsureCoreWebView2Async();
-
             var core = HomeAssistantWebView.CoreWebView2;
             core.Settings.AreDevToolsEnabled = false;
             core.Settings.IsStatusBarEnabled = false;
@@ -266,62 +267,43 @@ public sealed partial class MainWindow : Window
             {
                 if (!Uri.TryCreate(args.Uri, UriKind.Absolute, out var navigationUri) ||
                     (navigationUri.Scheme != Uri.UriSchemeHttp && navigationUri.Scheme != Uri.UriSchemeHttps))
-                {
                     args.Cancel = true;
-                }
             };
-
             core.NavigationCompleted += (_, args) =>
             {
                 if (args.IsSuccess)
                 {
                     var title = core.DocumentTitle;
-                    DashboardStatusText.Text = string.IsNullOrWhiteSpace(title)
-                        ? "Home Assistant"
-                        : title;
+                    DashboardStatusText.Text = string.IsNullOrWhiteSpace(title) ? _selectedDashboard.Name : title;
                 }
                 else
-                {
-                    DashboardStatusText.Text = $"Home Assistant page could not be loaded ({args.WebErrorStatus}).";
-                }
+                    DashboardStatusText.Text = $"{_selectedDashboard.Name} could not be loaded ({args.WebErrorStatus}).";
             };
-
             core.DocumentTitleChanged += (_, _) =>
             {
                 var title = core.DocumentTitle;
-                if (!string.IsNullOrWhiteSpace(title))
-                {
-                    DashboardStatusText.Text = title;
-                }
+                if (!string.IsNullOrWhiteSpace(title)) DashboardStatusText.Text = title;
             };
-
             core.NewWindowRequested += (_, args) =>
             {
                 args.Handled = true;
                 if (!Uri.TryCreate(args.Uri, UriKind.Absolute, out var requestedUri) ||
-                    (requestedUri.Scheme != Uri.UriSchemeHttp && requestedUri.Scheme != Uri.UriSchemeHttps))
-                {
-                    return;
-                }
-
-                // Keep Home Assistant-origin pages inside the app. Open external
-                // destinations in the user's default browser.
-                if (_dashboardUri is not null && IsSameOrigin(requestedUri, _dashboardUri))
-                {
+                    (requestedUri.Scheme != Uri.UriSchemeHttp && requestedUri.Scheme != Uri.UriSchemeHttps)) return;
+                if (_instanceUri is not null && IsSameOrigin(requestedUri, _instanceUri))
                     core.Navigate(requestedUri.AbsoluteUri);
-                }
                 else
-                {
                     Process.Start(new ProcessStartInfo(requestedUri.AbsoluteUri) { UseShellExecute = true });
-                }
             };
-
             _webViewInitialized = true;
         }
-        finally
-        {
-            _webViewInitializing = false;
-        }
+        finally { _webViewInitializing = false; }
+
+        // Selection may change while WebView2 is being initialized. Navigate to
+        // the latest chosen dashboard, not the URL that was current at start-up.
+        if (_currentPage == "Dashboard" && _dashboardUri is not null &&
+            (_lastNavigatedDashboardUri is null ||
+             !string.Equals(_lastNavigatedDashboardUri.AbsoluteUri, _dashboardUri.AbsoluteUri, StringComparison.OrdinalIgnoreCase)))
+            await LoadDashboardAsync();
     }
 
     private void ShowDashboardError(Exception exception)
@@ -343,64 +325,29 @@ public sealed partial class MainWindow : Window
             HomeAssistantWebView.Visibility = Visibility.Collapsed;
             DashboardUnavailableOverlay.Visibility = Visibility.Visible;
             DashboardUnavailableTitle.Text = "Connect Home Assistant";
-            DashboardUnavailableDetail.Text =
-                "Add your Home Assistant instance first. Its native dashboard will appear here.";
+            DashboardUnavailableDetail.Text = "Add your Home Assistant instance first. Its dashboard will appear here.";
             DashboardStatusText.Text = "No Home Assistant instance configured";
+            DashboardSelector.IsEnabled = false;
+            DefaultDashboardButton.IsEnabled = false;
             return;
         }
 
         DashboardUnavailableOverlay.Visibility = Visibility.Collapsed;
         HomeAssistantWebView.Visibility = Visibility.Visible;
-        DashboardStatusText.Text = "Ready to load your Home Assistant dashboard";
-    }
-
-    /// <summary>
-    /// Requests a dashboard-only presentation from the Home Assistant Kiosk Mode
-    /// frontend resource. If that resource is not installed, Home Assistant simply
-    /// ignores the query parameter and renders its regular frontend.
-    /// </summary>
-    private static Uri AddKioskModeParameter(Uri dashboardUri)
-    {
-        var builder = new UriBuilder(dashboardUri);
-        var query = builder.Query.TrimStart('?');
-        var parameters = query.Split('&', StringSplitOptions.RemoveEmptyEntries);
-
-        var hasKioskParameter = parameters.Any(parameter =>
-            string.Equals(
-                Uri.UnescapeDataString(parameter.Split('=', 2)[0]),
-                "kiosk",
-                StringComparison.OrdinalIgnoreCase));
-
-        // Respect an explicit opt-out included in the configured instance URL.
-        var hasKioskModeOptOut = parameters.Any(parameter =>
-            string.Equals(
-                Uri.UnescapeDataString(parameter.Split('=', 2)[0]),
-                "disable_km",
-                StringComparison.OrdinalIgnoreCase));
-
-        if (hasKioskParameter || hasKioskModeOptOut)
-        {
-            return dashboardUri;
-        }
-
-        builder.Query = string.IsNullOrEmpty(query) ? "kiosk" : $"{query}&kiosk";
-        return builder.Uri;
+        DashboardSelector.IsEnabled = true;
+        DashboardStatusText.Text = $"Ready to load {_selectedDashboard.Name}";
     }
 
     private static Uri EnsureTrailingSlash(Uri uri)
     {
         var absolute = uri.AbsoluteUri;
-        return absolute.EndsWith("/", StringComparison.Ordinal)
-            ? uri
-            : new Uri(absolute + "/", UriKind.Absolute);
+        return absolute.EndsWith("/", StringComparison.Ordinal) ? uri : new Uri(absolute + "/", UriKind.Absolute);
     }
 
-    private static bool IsSameOrigin(Uri candidate, Uri trusted)
-    {
-        return string.Equals(candidate.Scheme, trusted.Scheme, StringComparison.OrdinalIgnoreCase) &&
-               string.Equals(candidate.Host, trusted.Host, StringComparison.OrdinalIgnoreCase) &&
-               candidate.Port == trusted.Port;
-    }
+    private static bool IsSameOrigin(Uri candidate, Uri trusted) =>
+        string.Equals(candidate.Scheme, trusted.Scheme, StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(candidate.Host, trusted.Host, StringComparison.OrdinalIgnoreCase) &&
+        candidate.Port == trusted.Port;
 
     private void NavigateTo(string page)
     {
@@ -410,18 +357,16 @@ public sealed partial class MainWindow : Window
         var isHomeAssistant = page == "Home Assistant";
         var isDashboard = page == "Dashboard";
         var isPlaceholder = !isOverview && !isHomeAssistant && !isDashboard;
-
         ScrollablePageContent.Visibility = isDashboard ? Visibility.Collapsed : Visibility.Visible;
         OverviewContent.Visibility = isOverview ? Visibility.Visible : Visibility.Collapsed;
         HomeAssistantContent.Visibility = isHomeAssistant ? Visibility.Visible : Visibility.Collapsed;
         PlaceholderContent.Visibility = isPlaceholder ? Visibility.Visible : Visibility.Collapsed;
         DashboardContent.Visibility = isDashboard ? Visibility.Visible : Visibility.Collapsed;
-
         PageSubtitle.Text = page switch
         {
             "Overview" => "Your PC and Home Assistant, in one place.",
             "Home Assistant" => "Connection and account settings for your smart home.",
-            "Dashboard" => "Your Home Assistant dashboard, without its navigation chrome.",
+            "Dashboard" => "Your Home Assistant dashboards, without Home Assistant's navigation chrome.",
             "Sensors" => "Discover and configure Windows telemetry.",
             "Actions" => "Build actions that work across Windows and Home Assistant.",
             "Applications & Media" => "Manage your applications and media controls.",
@@ -429,23 +374,16 @@ public sealed partial class MainWindow : Window
             "Settings" => "Configure Desktop Companion.",
             _ => "Desktop Companion"
         };
-
         SetNavigationSelection(page);
-
         if (isDashboard)
         {
             UpdateDashboardAvailability();
-            if (_dashboardUri is not null)
-            {
-                _ = LoadDashboardAsync();
-            }
+            if (_dashboardUri is not null) _ = LoadDashboardAsync();
         }
-
         if (isPlaceholder)
         {
             PlaceholderTitle.Text = page;
-            PlaceholderDescription.Text =
-                $"{page} is part of the implementation roadmap. The native Windows shell is in place; this feature will be built as a complete vertical slice.";
+            PlaceholderDescription.Text = $"{page} is part of the implementation roadmap. The native Windows shell is in place; this feature will be built as a complete vertical slice.";
         }
     }
 
@@ -463,13 +401,8 @@ public sealed partial class MainWindow : Window
 
     private static void SetNavigationButton(Button button, bool selected)
     {
-        button.Background = new SolidColorBrush(Color.FromArgb(
-            255,
-            selected ? (byte)18 : (byte)23,
-            selected ? (byte)59 : (byte)26,
-            selected ? (byte)75 : (byte)31));
-        button.Foreground = new SolidColorBrush(selected
-            ? Colors.White
-            : Color.FromArgb(255, 223, 227, 232));
+        button.Background = new SolidColorBrush(Color.FromArgb(255,
+            selected ? (byte)18 : (byte)23, selected ? (byte)59 : (byte)26, selected ? (byte)75 : (byte)31));
+        button.Foreground = new SolidColorBrush(selected ? Colors.White : Color.FromArgb(255, 223, 227, 232));
     }
 }

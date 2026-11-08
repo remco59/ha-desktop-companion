@@ -39,6 +39,7 @@ public partial class App : Application
         {
             _mainWindow.SetHomeAssistantUrl(savedUri.AbsoluteUri);
             _mainWindow.SetDashboardUri(savedUri);
+            _mainWindow.SetSelectedDashboard(AppSettingsStore.LoadSelectedDashboardId());
             _ = RestoreHomeAssistantConnectionAsync(savedUri);
         }
 
@@ -85,6 +86,7 @@ public partial class App : Application
             _connectedInstance = instanceUri;
             AppSettingsStore.SaveHomeAssistantUrl(instanceUri.AbsoluteUri);
             _mainWindow.SetDashboardUri(instanceUri);
+            _mainWindow.SetSelectedDashboard(AppSettingsStore.LoadSelectedDashboardId());
 
             _connectionSupervisor = new HomeAssistantConnectionSupervisor(new HomeAssistantWebSocketClient());
             _connectionSupervisor.StateChanged += (_, state) =>

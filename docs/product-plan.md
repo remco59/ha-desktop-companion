@@ -273,6 +273,8 @@ Acceptance:
 
 **Goal:** Add useful Windows control features with safe, explicit behaviour.
 
+Current implementation note (2026-11-08): native master volume and mute are being delivered in draft PR #22, stacked on Home Assistant sensor-publishing PR #21. The Applications & Media page reads and controls the default Windows playback endpoint using Core Audio's IAudioEndpointVolume API. The code includes finite/clamped volume conversion and unit tests; real device and keyboard-volume synchronization still require Windows acceptance.
+
 Suggested order:
 1. Master volume and mute.
 2. Default output device selection.
@@ -390,7 +392,7 @@ The next work should be selected from this order unless new user feedback change
 
 ### Immediate next implementation slice
 
-Draft PR #21 contains the first secure HA pairing and publishing vertical slice, stacked on the validated sensor-provider work in PRs #18–#20. First validate CI and code review, then perform live pairing and revocation tests against the user's HA instance. After that, complete the provider registry, configurable sampling intervals, sensor enable/disable settings, and capability diagnostics. Only then proceed to native audio/media controls.
+Draft PR #21 contains the secure HA pairing and selected-sensor publishing slice; live HA pairing/restart/revocation acceptance is still required. Draft PR #22 begins Phase 4 with native master volume and mute. After CI review and Windows hardware acceptance, proceed with default output-device selection and global media-session controls, then finish the provider registry and sensor settings.
 
 ---
 
@@ -431,4 +433,5 @@ At the time of writing:
 - PR #19 — [Windows CPU, memory, and uptime sensors](https://github.com/remco59/ha-desktop-companion/pull/19) — draft, stacked on PR #18. Windows CI and installer packaging passed; the user compared CPU, memory, and uptime with Windows Task Manager on Windows 11 and accepted the readings, including roughly one-second display lag.
 - PR #20 — [per-volume storage and per-adapter network sensors](https://github.com/remco59/ha-desktop-companion/pull/20) — draft, stacked on PR #19. Adds fixed/removable volume capacity/used/available/status and adapter status plus receive/send rates, with dynamic cards on the Sensors page.
 - PR #21 — [secure Home Assistant pairing and sensor publishing](https://github.com/remco59/ha-desktop-companion/pull/21) — draft, stacked on PR #20. Implements ADR 0008, HA device/entity registration, session-secured telemetry, Windows sensor selection/publishing controls, and Python protocol tests. Live pairing acceptance remains outstanding.
+- PR #22 — [native Windows master volume and mute](https://github.com/remco59/ha-desktop-companion/pull/22) — draft, stacked on PR #21. Adds Core Audio endpoint volume/mute controls to Applications & Media; real playback-device validation remains open.
 - The current project plan is documentation, not permission to merge, release, or change production Home Assistant configuration.

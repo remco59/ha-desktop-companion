@@ -64,7 +64,8 @@ Status legend:
 
 ## Phase 4 — Native Windows control
 
-- [ ] Master volume and mute.
+- [x] Add native master-volume and mute controls to Applications & Media using the Windows Core Audio endpoint API (draft PR #22).
+- [ ] Verify volume/mute behaviour against Windows Settings and hardware buttons on Windows 11.
 - [ ] Default audio output-device selection.
 - [ ] Media transport controls and now-playing metadata.
 - [ ] Application discovery and launch.

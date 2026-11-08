@@ -3,6 +3,7 @@ using DesktopCompanion.Core.Models;
 using DesktopCompanion.HomeAssistant.Authentication;
 using DesktopCompanion.HomeAssistant.Services;
 using DesktopCompanion.HomeAssistant.WebSocket;
+using DesktopCompanion.Windows.Audio;
 using DesktopCompanion.Windows.Security;
 using DesktopCompanion.Windows.Sensors;
 using DesktopCompanion.Windows.Tray;
@@ -18,6 +19,7 @@ public partial class App : Application
     private HomeAssistantTokenProvider? _tokenProvider;
     private HomeAssistantConnectionSupervisor? _connectionSupervisor;
     private IHomeAssistantTelemetryClient? _telemetryClient;
+    private IAudioControlService? _audioControlService;
     private WindowsSensorMonitor? _sensorMonitor;
     private Task? _sensorMonitorStartTask;
     private SensorSample? _latestSensorSample;
@@ -44,7 +46,11 @@ public partial class App : Application
         _mainWindow.DisconnectHomeAssistantRequested += OnDisconnectHomeAssistantRequested;
         _mainWindow.PairSensorsRequested += OnPairSensorsRequested;
         _mainWindow.UnpairSensorsRequested += OnUnpairSensorsRequested;
+        _mainWindow.MasterVolumeChangeRequested += OnMasterVolumeChangeRequested;
+        _mainWindow.AudioMuteChangeRequested += OnAudioMuteChangeRequested;
+        _mainWindow.AudioRefreshRequested += OnAudioRefreshRequested;
 
+        _audioControlService = new WindowsAudioControlService();
         _telemetryClient = new HomeAssistantTelemetryWebSocketClient();
         _pairedDeviceId = AppSettingsStore.LoadPairedDeviceId();
         _mainWindow.UpdateHomeAssistantPublishingStatus(
@@ -78,6 +84,52 @@ public partial class App : Application
         _trayIconHost.Activated += (_, _) => ToggleTrayPopup();
         _trayIconHost.ContextRequested += (_, _) => ToggleTrayPopup();
         _mainWindow.Activate();
+    }
+
+    private async void OnAudioRefreshRequested() =>
+        await RefreshAudioEndpointAsync();
+
+    private async void OnMasterVolumeChangeRequested(double volumePercent)
+    {
+        if (_audioControlService is null || _mainWindow is null) return;
+        try
+        {
+            var state = await _audioControlService.SetMasterVolumeAsync(volumePercent);
+            _mainWindow.SetAudioEndpointState(state);
+        }
+        catch (Exception exception)
+        {
+            _mainWindow.SetAudioControlError($"Could not change Windows volume: {exception.Message}");
+        }
+    }
+
+    private async void OnAudioMuteChangeRequested(bool muted)
+    {
+        if (_audioControlService is null || _mainWindow is null) return;
+        try
+        {
+            var state = await _audioControlService.SetMutedAsync(muted);
+            _mainWindow.SetAudioEndpointState(state);
+        }
+        catch (Exception exception)
+        {
+            _mainWindow.SetAudioControlError($"Could not change the mute state: {exception.Message}");
+        }
+    }
+
+    private async Task RefreshAudioEndpointAsync()
+    {
+        if (_audioControlService is null || _mainWindow is null) return;
+        try
+        {
+            var state = await _audioControlService.GetDefaultOutputStateAsync();
+            _mainWindow.SetAudioEndpointState(state);
+        }
+        catch (Exception exception)
+        {
+            _mainWindow.SetAudioControlError(
+                $"Windows playback audio is unavailable. Connect an output device and refresh. {exception.Message}");
+        }
     }
 
     private void HandleSensorSample(SensorSample sample)

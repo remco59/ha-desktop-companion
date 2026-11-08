@@ -26,6 +26,9 @@
                     <Button x:Name="OverviewNavigationButton" Tag="Overview" Content="  Overview" Click="OnNavigationClicked"
                             HorizontalContentAlignment="Left" Background="#123B4B" Foreground="White"
                             BorderThickness="0" Padding="12,10" CornerRadius="8" />
+                    <Button x:Name="DashboardNavigationButton" Tag="Dashboard" Content="  Dashboard" Click="OnNavigationClicked"
+                            HorizontalContentAlignment="Left" Background="Transparent" Foreground="#DFE3E8"
+                            BorderThickness="0" Padding="12,10" />
                     <Button x:Name="HomeAssistantNavigationButton" Tag="Home Assistant" Content="  Home Assistant" Click="OnNavigationClicked"
                             HorizontalContentAlignment="Left" Background="Transparent" Foreground="#DFE3E8"
                             BorderThickness="0" Padding="12,10" />
@@ -33,9 +36,6 @@
                             HorizontalContentAlignment="Left" Background="Transparent" Foreground="#DFE3E8"
                             BorderThickness="0" Padding="12,10" />
                     <Button x:Name="ActionsNavigationButton" Tag="Actions" Content="  Actions" Click="OnNavigationClicked"
-                            HorizontalContentAlignment="Left" Background="Transparent" Foreground="#DFE3E8"
-                            BorderThickness="0" Padding="12,10" />
-                    <Button x:Name="DashboardNavigationButton" Tag="Dashboard" Content="  Dashboard" Click="OnNavigationClicked"
                             HorizontalContentAlignment="Left" Background="Transparent" Foreground="#DFE3E8"
                             BorderThickness="0" Padding="12,10" />
                     <Button x:Name="ApplicationsNavigationButton" Tag="Applications &amp; Media" Content="  Applications &amp; Media" Click="OnNavigationClicked"

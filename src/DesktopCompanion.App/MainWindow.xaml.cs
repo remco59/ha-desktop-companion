@@ -14,6 +14,7 @@ public sealed partial class MainWindow : Window
 {
     private bool _allowClose;
     private IReadOnlyList<HomeAssistantEntity> _entities = Array.Empty<HomeAssistantEntity>();
+    private string? _entityLoadMessage;
 
     public MainWindow()
     {
@@ -33,11 +34,8 @@ public sealed partial class MainWindow : Window
         DispatcherQueue.TryEnqueue(() =>
         {
             _entities = entities;
+            _entityLoadMessage = message;
             ApplyEntityFilter();
-            EntityEmptyText.Text = message ?? (entities.Count == 0
-                ? "No entities were returned by Home Assistant."
-                : string.Empty);
-            EntityEmptyText.Visibility = entities.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         });
     }
 
@@ -127,6 +125,21 @@ public sealed partial class MainWindow : Window
         EntityCountText.Text = filtered.Count == _entities.Count
             ? $"{_entities.Count} entities"
             : $"{filtered.Count} of {_entities.Count} entities";
+
+        if (_entities.Count == 0)
+        {
+            EntityEmptyText.Text = _entityLoadMessage ?? "No entities were returned by Home Assistant.";
+            EntityEmptyText.Visibility = Visibility.Visible;
+        }
+        else if (filtered.Count == 0)
+        {
+            EntityEmptyText.Text = "No entities match your search.";
+            EntityEmptyText.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            EntityEmptyText.Visibility = Visibility.Collapsed;
+        }
     }
 
     private void NavigateTo(string page)

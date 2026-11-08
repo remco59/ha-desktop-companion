@@ -273,7 +273,7 @@ Acceptance:
 
 **Goal:** Add useful Windows control features with safe, explicit behaviour.
 
-Current implementation note (2026-11-08): native master volume and mute are being delivered in draft PR #22, stacked on Home Assistant sensor-publishing PR #21. The Applications & Media page reads and controls the default Windows playback endpoint using Core Audio's IAudioEndpointVolume API. The code includes finite/clamped volume conversion and unit tests; real device and keyboard-volume synchronization still require Windows acceptance.
+Current implementation note (2026-11-08): native master volume and mute are implemented in draft PR #22, stacked on Home Assistant sensor-publishing PR #21. The Applications & Media page reads and controls the default Windows playback endpoint through Core Audio. PR #23 adds local Start Menu application discovery/search/launch using only trusted shortcut paths; it never accepts arbitrary paths or remote launch commands. Real playback-device and installed-app launch validation still require Windows acceptance.
 
 Suggested order:
 1. Master volume and mute.
@@ -434,4 +434,5 @@ At the time of writing:
 - PR #20 — [per-volume storage and per-adapter network sensors](https://github.com/remco59/ha-desktop-companion/pull/20) — draft, stacked on PR #19. Adds fixed/removable volume capacity/used/available/status and adapter status plus receive/send rates, with dynamic cards on the Sensors page.
 - PR #21 — [secure Home Assistant pairing and sensor publishing](https://github.com/remco59/ha-desktop-companion/pull/21) — draft, stacked on PR #20. Implements ADR 0008, HA device/entity registration, session-secured telemetry, Windows sensor selection/publishing controls, and Python protocol tests. Live pairing acceptance remains outstanding.
 - PR #22 — [native Windows master volume and mute](https://github.com/remco59/ha-desktop-companion/pull/22) — draft, stacked on PR #21. Adds Core Audio endpoint volume/mute controls to Applications & Media; real playback-device validation remains open.
+- PR #23 — [Start Menu application discovery and launch](https://github.com/remco59/ha-desktop-companion/pull/23) — draft, stacked on PR #22. Enumerates trusted Start Menu shortcuts, filters by app name and launches only a currently catalogued shortcut after path validation; no arbitrary executable path or remote command support.
 - The current project plan is documentation, not permission to merge, release, or change production Home Assistant configuration.

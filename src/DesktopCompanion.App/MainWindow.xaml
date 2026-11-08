@@ -373,6 +373,32 @@
                                        FontSize="12" Foreground="#A7ADB7" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
+                    <Border Background="#1C1F26" CornerRadius="14" Padding="22">
+                        <StackPanel Spacing="12">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Installed applications" FontSize="16" FontWeight="SemiBold" Foreground="White" />
+                                    <TextBlock Text="Apps discovered from your Windows Start Menu."
+                                               FontSize="12" Foreground="#A7ADB7" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="Refresh"
+                                        Click="OnRefreshApplicationsClicked"
+                                        Background="#343B47" Foreground="#DFE3E8" BorderThickness="0"
+                                        CornerRadius="8" Padding="14,8" />
+                            </Grid>
+                            <TextBox x:Name="ApplicationSearchBox"
+                                     PlaceholderText="Search installed applications"
+                                     TextChanged="OnApplicationSearchChanged"
+                                     AutomationProperties.Name="Search installed applications" />
+                            <TextBlock x:Name="ApplicationCatalogStatusText" Text="Applications have not been loaded yet."
+                                       FontSize="11" Foreground="#A7ADB7" TextWrapping="Wrap" />
+                            <StackPanel x:Name="ApplicationCatalogPanel" Spacing="6" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
                 <Border x:Name="PlaceholderContent" Background="#1C1F26" CornerRadius="14" Padding="24"

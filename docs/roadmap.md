@@ -1,76 +1,106 @@
 # Implementation roadmap
 
-## Phase 0 — Technical validation
+The detailed product vision, architecture constraints, acceptance criteria, priorities, and development handoff live in **[Product Plan & Development Handoff](product-plan.md)**. Read that document before starting a new implementation session.
 
-- [x] Validate the WinUI 3 application and native tray host build.
-- [x] Verify Home Assistant OAuth/application authentication approach.
-- [ ] Specify and prototype the authenticated sensor telemetry bridge.
-- [ ] Verify basic Windows system sensor access without administrator elevation.
-- [x] Confirm the WinUI 3 WebView2 hosting strategy and Evergreen runtime model.
-- [x] Add WebView2 runtime availability/error handling to the dashboard host.
+Status legend:
+- \`[x]\` implemented and/or verified as explicitly described.
+- \`[ ]\` not yet complete or not yet acceptance-tested.
+- Code complete and CI green does not automatically mean real-Windows acceptance is complete.
 
-## Phase 1 — Foundation
+## Phase 0 — Stabilise the accepted preview
 
-- [x] Create repository and solution structure.
-- [x] Add initial WinUI 3 navigation shell.
-- [x] Define core sensor and Home Assistant contracts.
-- [x] Add first Windows system sensor provider scaffold.
-- [x] Add Home Assistant REST client foundation.
-- [x] Add Home Assistant integration scaffold.
-- [x] Add native tray icon host and tray pop-up window.
-- [x] Keep the main application alive when its window is closed.
-- [ ] Implement a full single-instance activation handoff.
-- [x] Implement the initial application host and background lifecycle.
-- [x] Add persistent non-secret instance settings; diagnostics remain open.
-- [x] Establish the first Windows CI build.
+- [x] Native WinUI 3 shell, navigation, tray icon, and tray popup.
+- [x] Keep the app running in the tray when the main window closes; explicit Exit stops it.
+- [x] Home Assistant OAuth PKCE, token refresh, secure Windows credential storage.
+- [x] Home Assistant REST client, entity discovery, and WebSocket state-change subscription.
+- [x] Connection supervisor with reconnect/backoff and status events.
+- [x] Embed the real Home Assistant frontend with WebView2 and a persistent, dedicated browser profile.
+- [x] Keep native OAuth credentials separate from the embedded browser session.
+- [x] Dashboard-only Kiosk Mode request via the \`?kiosk\` URL parameter.
+- [x] User verified the dashboard-only view on Windows 11 (2026-11-08).
+- [x] Windows CI and packaging workflows build successfully for the current preview.
+- [ ] Review/integrate the current stacked dashboard and installer PRs (requires explicit user approval).
+- [ ] Verify a real in-place installer upgrade on Windows, including when Desktop Companion is running in the tray.
+- [ ] Implement single-instance activation handoff.
+- [ ] Add structured diagnostics without logging tokens, cookies, or private entity payloads.
+- [ ] Establish automated test coverage for pure URL, state, and service logic.
 
-## Phase 2 — Home Assistant
+## Phase 1 — Finish the native dashboard experience
 
-- [x] Implement OAuth PKCE/token lifecycle (pending live-instance acceptance test).
-- [x] Implement a one-connection WebSocket client and state-change subscription.
-- [x] Add a connection supervisor with reconnect/backoff and status events.
-- [x] Add the authenticated entity REST query service for native integrations; use the Home Assistant frontend for dashboard browsing and entity controls.
-- [ ] Add service, scene, and script controls.
-- [ ] Complete integration pairing and telemetry entities.
+- [x] Embed the actual Home Assistant dashboard rather than reimplementing Lovelace.
+- [x] Hide Home Assistant's own header/sidebar with Kiosk Mode when its frontend resource is installed.
+- [ ] Add a native dashboard selector for configured Home Assistant dashboards/views.
+- [ ] Remember the selected dashboard and provide a return-to-default action.
+- [ ] Preserve reverse-proxy paths, existing query parameters, and Kiosk Mode behaviour when switching dashboards.
+- [ ] Add resilient loading, offline, error, and reconnect states.
 
-## Phase 3 — Windows monitoring
+## Phase 2 — Windows sensor engine
 
-- [ ] CPU, memory, GPU, storage, network, uptime, and application sensors.
-- [ ] Hardware provider architecture and capability diagnostics.
-- [ ] Sensor configuration and update intervals.
-- [ ] Native integration publishing.
-- [ ] Optional MQTT Discovery publishing.
+- [x] Define core sensor descriptor and reading contracts.
+- [x] Add the initial Windows system provider scaffold (uptime, hostname, Windows version).
+- [ ] Implement CPU, memory, storage, network, and uptime readings with stable IDs and units.
+- [ ] Add optional GPU and hardware temperature/fan providers with capability diagnostics.
+- [ ] Add provider registry, sampling intervals, stale-data handling, and sensor enable/disable preferences.
+- [ ] Build the native Sensors page and compact Overview summaries.
 
-## Phase 4 — Windows control
+## Phase 3 — Secure Home Assistant pairing and telemetry
+
+- [x] Add the Home Assistant custom-integration scaffold and initial config flow.
+- [ ] Write and approve a telemetry/pairing protocol ADR before implementing publishing.
+- [ ] Define device identity, pairing, authentication, replay protection, revocation, rate limits, payload limits, and availability.
+- [ ] Pair the Windows PC as a Home Assistant device.
+- [ ] Publish initial selected sensor entities with stable metadata and availability.
+- [ ] Add sensor selection and publishing controls.
+- [ ] Add tests for invalid credentials, replay, oversized payloads, stale data, and reconnect.
+
+## Phase 4 — Native Windows control
 
 - [ ] Master volume and mute.
-- [ ] Per-application audio and output-device selection.
-- [ ] Application discovery, launching, focus, and close.
-- [ ] Safe system actions.
-- [ ] Shared action engine and Home Assistant exposure.
+- [ ] Default audio output-device selection.
+- [ ] Media transport controls and now-playing metadata.
+- [ ] Application discovery and launch.
+- [ ] Focus/minimise/close application controls.
+- [ ] Per-application audio levels/output routing where supported.
+- [ ] Safe system actions with explicit opt-in and confirmation.
+- [ ] Shared typed action contracts and optional Home Assistant exposure; never accept arbitrary shell commands.
 
-## Phase 5 — Home Assistant dashboard experience
+## Phase 5 — Actions and quick surfaces
 
-- [x] Embed the actual Home Assistant frontend in a native WinUI 3 window using WebView2.
-- [x] Keep the Home Assistant frontend's cards, entity controls, layouts, and styling intact.
-- [x] Persist the WebView2 profile per Windows user and clear it on explicit disconnect.
-- [x] Request Home Assistant dashboard-only kiosk presentation through the Kiosk Mode `?kiosk` URL parameter.
-- [ ] Add a native dashboard selector that can switch among Home Assistant dashboards/views.
-- [ ] Add a compact tray dashboard surface that hosts selected Home Assistant views.
-- [ ] Add native Windows companion surfaces (system sensors, media, quick actions) around the embedded Home Assistant dashboard.
+- [ ] Shared action model with stable IDs, typed parameters, icons, and confirmation policies.
+- [ ] Native tray favourites and quick actions.
+- [ ] User-configurable action ordering and favourites.
+- [ ] Compact tray dashboard surface for selected Home Assistant views, designed around WebView2 profile/session reuse.
+- [ ] Multi-step actions with sequencing, failure handling, and cancellation.
 
-## Phase 6 — Advanced features
+## Phase 6 — Notifications and event handling
 
-- [ ] Notifications and actionable events.
-- [ ] Media controls and playback metadata.
-- [ ] Global keyboard shortcuts.
-- [ ] Application library and favourites.
-- [ ] Multi-step actions and richer widgets.
+- [ ] Configurable Windows toast notifications for selected Home Assistant and companion events.
+- [ ] Priorities, quiet hours, per-event preferences, cooldowns, and deduplication.
+- [ ] Safe notification actions that open the relevant native page or Home Assistant dashboard.
 
-## Phase 7 — Stabilisation
+## Phase 7 — Applications, media, and desktop integration
 
-- [ ] Hardware compatibility matrix.
-- [ ] Security review.
-- [ ] Performance and reconnect tests.
-- [ ] Installer, upgrade, and uninstall validation.
-- [ ] Documentation and v1.0 release.
+- [ ] Application library, discovery, favourites, and launch/status.
+- [ ] Now-playing metadata and global media controls.
+- [ ] Audio-session and output-device information.
+- [ ] Configurable global keyboard shortcuts with conflict detection.
+- [ ] Optional Windows startup preference (opt-in).
+- [ ] Privacy controls for what PC information is exposed to Home Assistant.
+
+## Phase 8 — Settings, persistence, accessibility, and release
+
+- [ ] SQLite persistence for non-secret settings, dashboard definitions, sensor preferences, actions, and favourites.
+- [ ] Keep credentials and pairing secrets in OS-protected storage.
+- [ ] Settings for startup, tray behaviour, dashboards, sampling, notifications, privacy, and diagnostics.
+- [ ] Export/import of non-secret configuration.
+- [ ] Keyboard navigation, screen-reader names, contrast, high-DPI, and multi-monitor validation.
+- [ ] Localisation infrastructure (English and Dutch first).
+- [ ] Installer clean-install, upgrade, uninstall, and reinstall validation.
+- [ ] Evaluate code signing and a repeatable update/release process.
+- [ ] Security review, performance profiling, hardware compatibility matrix, crash diagnostics, and v1.0 documentation.
+
+## Next implementation slice
+
+After the current PR stack is reviewed and integrated with the user's explicit approval, start with the **native dashboard selector**. Then implement the first Windows sensor vertical slice (CPU + memory + uptime). Design the secure telemetry protocol before publishing any sensor to Home Assistant.
+
+See [the Product Plan](product-plan.md) for scope, implementation notes, acceptance criteria, and the session restart checklist.

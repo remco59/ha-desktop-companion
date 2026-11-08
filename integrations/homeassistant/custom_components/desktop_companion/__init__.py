@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hmac
 import secrets
 import time
 from typing import Any
@@ -29,7 +28,15 @@ from .const import (
     WS_START_SESSION,
     WS_UNPAIR_DEVICE,
 )
-from .protocol import ProtocolValidationError, normalize_device_registration, validate_readings
+from .protocol import (
+    ProtocolValidationError,
+    is_device_owner,
+    is_next_sequence,
+    is_publish_interval_elapsed,
+    is_valid_session_nonce,
+    normalize_device_registration,
+    validate_readings,
+)
 from .runtime import DeviceRuntime, IntegrationRuntime
 
 
@@ -250,27 +257,21 @@ async def websocket_publish(
             msg["id"], websocket_api.ERR_NOT_FOUND, "The paired Desktop Companion device was not found."
         )
         return
-    if device.owner_user_id != connection.user.id:
+    if not is_device_owner(device.owner_user_id, connection.user.id):
         connection.send_error(
             msg["id"],
             websocket_api.ERR_UNAUTHORIZED,
             "This Home Assistant user does not own the paired Windows device.",
         )
         return
-    if (
-        not device.session_nonce
-        or not isinstance(msg["session_nonce"], str)
-        or len(msg["session_nonce"]) > 256
-        or not msg["session_nonce"].isascii()
-        or not hmac.compare_digest(device.session_nonce, msg["session_nonce"])
-    ):
+    if not is_valid_session_nonce(device.session_nonce, msg["session_nonce"]):
         connection.send_error(
             msg["id"],
             websocket_api.ERR_UNAUTHORIZED,
             "The telemetry session is invalid. Reconnect and start a new session.",
         )
         return
-    if type(msg["sequence"]) is not int or msg["sequence"] <= device.last_sequence:
+    if not is_next_sequence(device.last_sequence, msg["sequence"]):
         connection.send_error(
             msg["id"],
             websocket_api.ERR_INVALID_FORMAT,
@@ -279,9 +280,10 @@ async def websocket_publish(
         return
 
     now = time.monotonic()
-    if (
-        device.last_publish_monotonic
-        and now - device.last_publish_monotonic < MIN_PUBLISH_INTERVAL_SECONDS
+    if not is_publish_interval_elapsed(
+        device.last_publish_monotonic,
+        now,
+        MIN_PUBLISH_INTERVAL_SECONDS,
     ):
         connection.send_error(
             msg["id"],

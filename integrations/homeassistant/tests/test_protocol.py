@@ -7,6 +7,10 @@ import unittest
 
 from custom_components.desktop_companion.protocol import (
     ProtocolValidationError,
+    is_device_owner,
+    is_next_sequence,
+    is_publish_interval_elapsed,
+    is_valid_session_nonce,
     normalize_device_registration,
     validate_readings,
 )
@@ -59,6 +63,34 @@ class RegistrationTests(unittest.TestCase):
         ]
         with self.assertRaises(ProtocolValidationError):
             normalize_device_registration(self.installation_id, "PC", "1.0", many)
+
+
+class SessionSecurityTests(unittest.TestCase):
+    def test_device_owner_is_bound_to_the_authorised_user(self) -> None:
+        self.assertTrue(is_device_owner("ha-user-1", "ha-user-1"))
+        self.assertFalse(is_device_owner("ha-user-1", "ha-user-2"))
+        self.assertFalse(is_device_owner("", "ha-user-1"))
+
+    def test_session_nonce_requires_exact_ascii_match(self) -> None:
+        self.assertTrue(is_valid_session_nonce("nonce-123", "nonce-123"))
+        self.assertFalse(is_valid_session_nonce("nonce-123", "nonce-124"))
+        self.assertFalse(is_valid_session_nonce("nonce-123", "nøne-123"))
+        self.assertFalse(is_valid_session_nonce("nonce-123", "x" * 257))
+        self.assertFalse(is_valid_session_nonce(None, "nonce-123"))
+
+    def test_sequence_must_be_strictly_increasing_integer_not_boolean(self) -> None:
+        self.assertTrue(is_next_sequence(3, 4))
+        self.assertFalse(is_next_sequence(3, 3))
+        self.assertFalse(is_next_sequence(3, 2))
+        self.assertFalse(is_next_sequence(3, True))
+        self.assertFalse(is_next_sequence(3, 4.0))
+
+    def test_minimum_publish_interval_and_monotonic_clock(self) -> None:
+        self.assertTrue(is_publish_interval_elapsed(0.0, 10.0, 1.0))
+        self.assertTrue(is_publish_interval_elapsed(10.0, 11.0, 1.0))
+        self.assertFalse(is_publish_interval_elapsed(10.0, 10.5, 1.0))
+        self.assertFalse(is_publish_interval_elapsed(10.0, 9.0, 1.0))
+        self.assertFalse(is_publish_interval_elapsed(10.0, math.inf, 1.0))
 
 
 class ReadingTests(unittest.TestCase):

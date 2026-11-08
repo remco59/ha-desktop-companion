@@ -1,7 +1,12 @@
-"""Pure validation helpers for the Desktop Companion telemetry protocol."""
+"""Pure validation helpers for the Desktop Companion telemetry protocol.
+
+This module intentionally has no Home Assistant dependency so security-sensitive
+message validation can be tested with the Python standard library in CI.
+"""
 
 from __future__ import annotations
 
+import hmac
 import json
 import math
 import re
@@ -43,6 +48,8 @@ def normalize_device_registration(
     normalized_name = _normalize_label(name, MAX_DEVICE_NAME_LENGTH, "device name")
     if not isinstance(app_version, str) or not app_version or len(app_version) > MAX_APP_VERSION_LENGTH:
         raise ProtocolValidationError("The app version is invalid.")
+    if any(ord(char) < 32 for char in app_version):
+        raise ProtocolValidationError("The app version contains control characters.")
 
     if not isinstance(sensors, list) or not 1 <= len(sensors) <= MAX_SENSORS_PER_DEVICE:
         raise ProtocolValidationError(
@@ -92,6 +99,52 @@ def normalize_device_registration(
         "app_version": app_version,
         "sensors": normalized_sensors,
     }
+
+
+def is_device_owner(owner_user_id: str, authenticated_user_id: str) -> bool:
+    """Return whether the authenticated HA user owns this paired device."""
+    return (
+        isinstance(owner_user_id, str)
+        and bool(owner_user_id)
+        and isinstance(authenticated_user_id, str)
+        and bool(authenticated_user_id)
+        and hmac.compare_digest(owner_user_id, authenticated_user_id)
+    )
+
+
+def is_valid_session_nonce(expected_nonce: str | None, provided_nonce: Any) -> bool:
+    """Compare a bounded printable nonce without leaking timing information."""
+    return (
+        isinstance(expected_nonce, str)
+        and bool(expected_nonce)
+        and isinstance(provided_nonce, str)
+        and 1 <= len(provided_nonce) <= 256
+        and provided_nonce.isascii()
+        and hmac.compare_digest(expected_nonce, provided_nonce)
+    )
+
+
+def is_next_sequence(last_sequence: int, proposed_sequence: Any) -> bool:
+    """Accept only a strictly increasing integer sequence (bool is not an int here)."""
+    return type(proposed_sequence) is int and proposed_sequence > last_sequence
+
+
+def is_publish_interval_elapsed(
+    last_publish_monotonic: float,
+    now_monotonic: float,
+    minimum_interval_seconds: float,
+) -> bool:
+    """Return whether the configured minimum publish interval has elapsed."""
+    if not all(
+        math.isfinite(value)
+        for value in (last_publish_monotonic, now_monotonic, minimum_interval_seconds)
+    ):
+        return False
+    if minimum_interval_seconds <= 0 or now_monotonic < last_publish_monotonic:
+        return False
+    return last_publish_monotonic <= 0 or (
+        now_monotonic - last_publish_monotonic >= minimum_interval_seconds
+    )
 
 
 def validate_readings(

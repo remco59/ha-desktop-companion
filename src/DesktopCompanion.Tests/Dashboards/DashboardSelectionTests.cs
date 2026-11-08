@@ -10,8 +10,19 @@ public sealed class DashboardSelectionTests
     public void Normalize_supplies_default_when_empty()
     {
         var result = DashboardSelection.Normalize([]);
-        Assert.Single(result);
+        Assert.Equal(["control", "media", "system"], result.Select(item => item.Id));
+        Assert.Equal("desktop-companion/control", result[0].Path);
         Assert.True(result[0].IsDefault);
+        Assert.False(result[1].IsDefault);
+        Assert.False(result[2].IsDefault);
+    }
+
+    [Fact]
+    public void Presets_use_the_confirmed_home_assistant_view_paths()
+    {
+        Assert.Equal(
+            ["desktop-companion/control", "desktop-companion/media", "desktop-companion/system"],
+            DashboardSelection.Presets.Select(item => item.Path));
     }
 
     [Fact]

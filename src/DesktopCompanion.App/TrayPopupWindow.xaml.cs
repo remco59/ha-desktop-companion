@@ -77,8 +77,8 @@ public sealed partial class TrayPopupWindow : Window
             HomeAssistantStatusText.Text = title;
             HomeAssistantStatusDetail.Text = detail;
             HomeAssistantStatusDot.Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                connected ? Windows.UI.Color.FromArgb(255, 98, 214, 174) :
-                Windows.UI.Color.FromArgb(255, 224, 169, 77));
+                connected ? global::Windows.UI.Color.FromArgb(255, 98, 214, 174) :
+                global::Windows.UI.Color.FromArgb(255, 224, 169, 77));
         });
     }
 

@@ -1,7 +1,5 @@
 using System.Diagnostics;
-using DesktopCompanion.Core.Models;
 using Microsoft.UI;
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -62,6 +60,18 @@ public sealed partial class MainWindow : Window
                 _ = LoadDashboardAsync();
             }
         });
+    }
+
+    public void NavigateToDashboard() => NavigateTo("Dashboard");
+
+    public async Task ClearDashboardSessionAsync()
+    {
+        if (!_webViewInitialized) return;
+
+        await HomeAssistantWebView.CoreWebView2.Profile.ClearBrowsingDataAsync(
+            CoreWebView2BrowsingDataKinds.AllProfile);
+        HomeAssistantWebView.CoreWebView2.Navigate("about:blank");
+        _lastNavigatedDashboardUri = null;
     }
 
     public void ShowFromTray()
@@ -304,7 +314,10 @@ public sealed partial class MainWindow : Window
         HomeAssistantWebView.Visibility = Visibility.Collapsed;
         DashboardUnavailableOverlay.Visibility = Visibility.Visible;
         DashboardUnavailableTitle.Text = "Dashboard could not be opened";
-        DashboardUnavailableDetail.Text = exception.Message;
+        var details = exception.GetType().Name.Contains("RuntimeNotFound", StringComparison.OrdinalIgnoreCase)
+            ? "The Microsoft Edge WebView2 Runtime is missing. Install the Evergreen WebView2 Runtime and try again."
+            : exception.Message;
+        DashboardUnavailableDetail.Text = details;
         DashboardStatusText.Text = "Home Assistant dashboard unavailable";
     }
 

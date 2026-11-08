@@ -23,6 +23,7 @@ public sealed partial class MainWindow : Window
     private Uri? _instanceUri;
     private Uri? _dashboardUri;
     private Uri? _lastNavigatedDashboardUri;
+    private Uri? _selectedDashboardTargetUri;
     private bool _allowClose;
     private bool _webViewInitialized;
     private bool _webViewInitializing;
@@ -58,6 +59,7 @@ public sealed partial class MainWindow : Window
         _dashboardSelectionInitialized = true;
         UpdateDefaultDashboardButton();
         UpdateDashboardUri();
+        AppSettingsStore.SaveDashboardSettings(_dashboards, _selectedDashboard.Id);
     }
 
     public void SetSelectedDashboard(string? dashboardId)
@@ -193,6 +195,7 @@ public sealed partial class MainWindow : Window
             ? null
             : DashboardUrlComposer.Compose(_instanceUri, _selectedDashboard.Path);
         _lastNavigatedDashboardUri = null;
+        _selectedDashboardTargetUri = _dashboardUri;
     }
 
     private async void OnRefreshDashboardClicked(object sender, RoutedEventArgs e)
@@ -212,8 +215,7 @@ public sealed partial class MainWindow : Window
         if (_dashboardUri is null) return;
         try
         {
-            var url = HomeAssistantWebView.CoreWebView2?.Source;
-            if (string.IsNullOrWhiteSpace(url)) url = DashboardUrlComposer.Compose(_instanceUri!, _selectedDashboard.Path).AbsoluteUri;
+            var url = _selectedDashboardTargetUri?.AbsoluteUri ?? _dashboardUri.AbsoluteUri;
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
         catch (Exception exception) { DashboardStatusText.Text = $"Could not open the browser: {exception.Message}"; }
@@ -235,6 +237,7 @@ public sealed partial class MainWindow : Window
             DashboardStatusText.Text = $"Preparing {_selectedDashboard.Name}…";
             await EnsureDashboardWebViewAsync();
             var target = _dashboardUri.AbsoluteUri;
+            _selectedDashboardTargetUri = _dashboardUri;
             _lastNavigatedDashboardUri = _dashboardUri;
             DashboardStatusText.Text = $"Loading {_selectedDashboard.Name}…";
             HomeAssistantWebView.CoreWebView2.Navigate(target);

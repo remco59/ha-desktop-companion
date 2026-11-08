@@ -187,10 +187,11 @@ public sealed class WindowsStartMenuApplicationCatalogService : IApplicationCata
         exception is IOException or UnauthorizedAccessException or System.Security.SecurityException;
 
     private static IReadOnlyList<string> GetStartMenuRoots() =>
-    [
-        Environment.GetFolderPath(Environment.SpecialFolder.StartMenu),
-        Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu)
-    ]
+        new[]
+        {
+            Environment.GetFolderPath(Environment.SpecialFolder.StartMenu),
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu)
+        }
     .Where(path => !string.IsNullOrWhiteSpace(path))
     .Select(path => Path.GetFullPath(path))
     .Distinct(StringComparer.OrdinalIgnoreCase)

@@ -72,9 +72,9 @@ These are decisions, not open brainstorming topics. Any change should be propose
 - The embedded frontend's browser session is separate from native OAuth credentials.
 - Never inject native OAuth access or refresh tokens into JavaScript, page storage, or a WebView2 bridge.
 - Keep the Home Assistant dashboard interactive.
-- Append the Kiosk Mode \`?kiosk\` parameter when loading the configured instance URL.
+- Append the Kiosk Mode `?kiosk` parameter when loading the configured instance URL.
 - Preserve reverse-proxy path prefixes and existing query parameters.
-- Respect an explicit \`disable_km\` opt-out.
+- Respect an explicit `disable_km` opt-out.
 - The Kiosk Mode frontend resource must be installed in Home Assistant through HACS. Without it, Home Assistant displays its normal frontend chrome.
 - Dashboard selection should navigate to Home Assistant dashboard/view URLs; do not query dashboard configuration and redraw it natively.
 
@@ -111,12 +111,12 @@ This section separates implemented work from user-verified behaviour and remaini
 - Home Assistant OAuth PKCE flow and refresh-token lifecycle.
 - Windows credential-store adapter.
 - Authenticated Home Assistant REST client for connection checks, entity snapshots, and service calls.
-- WebSocket client for authenticated \`state_changed\` subscriptions.
+- WebSocket client for authenticated `state_changed` subscriptions.
 - Connection supervisor with status events and retry/backoff.
 - Entity discovery was tested against the user's Home Assistant instance and returned **629 entities**.
 - WebView2 hosts the real Home Assistant frontend with a persistent, dedicated browser profile.
 - Explicit Disconnect clears the native credentials and the dedicated WebView2 profile.
-- Kiosk Mode \`?kiosk\` dashboard presentation is implemented.
+- Kiosk Mode `?kiosk` dashboard presentation is implemented.
 - Windows CI and Windows package/installer workflows build successfully.
 
 ### User-verified on Windows 11 — 2026-11-08
@@ -153,7 +153,7 @@ Work:
 - Complete review and integration of the current stacked dashboard/installer PRs after explicit user approval; do not merge automatically.
 - Validate an actual in-place upgrade from an installed previous build, with Desktop Companion running and hidden in the tray.
 - Validate clean install, in-place upgrade, uninstall, reinstall, retained settings, and explicit Disconnect behaviour.
-- Confirm that \`CloseApplicationsFilter\` only targets \`DesktopCompanion.App.exe\` and that unchanged .NET runtime files are not needlessly replaced.
+- Confirm that `CloseApplicationsFilter` only targets `DesktopCompanion.App.exe` and that unchanged .NET runtime files are not needlessly replaced.
 - Implement single-instance activation: launching a second instance should activate the existing process/window and pass the requested destination (Dashboard, Settings, etc.).
 - Add basic structured diagnostics for startup, Home Assistant connection transitions, WebView2 failures, and installer/app version. Never log tokens, cookies, or private entity payloads.
 - Add a minimal automated test project and test the pure URL, state, and service logic.
@@ -412,8 +412,8 @@ At the start of a new session:
 
 At the time of writing:
 
-- Default branch is \`main\`.
-- PR #14 — [installer upgrade handling](https://github.com/remco59/ha-desktop-companion/pull/14) — draft, not merged. It contains the \`replacesameversion\` and targeted forced-close/filter changes. CI packaging passed for the recorded head; real in-place upgrade acceptance remains outstanding.
+- Default branch is `main`.
+- PR #14 — [installer upgrade handling](https://github.com/remco59/ha-desktop-companion/pull/14) — draft, not merged. It contains the `replacesameversion` and targeted forced-close/filter changes. CI packaging passed for the recorded head; real in-place upgrade acceptance remains outstanding.
 - PR #15 — [dashboard-only Kiosk Mode](https://github.com/remco59/ha-desktop-companion/pull/15) — draft, not merged. It is stacked on the installer-fix branch. Windows CI and Windows packaging passed for the recorded head. The user installed it and confirmed the Home Assistant header/sidebar are hidden while the dashboard remains visible and interactive.
 - Keep the PR stack intact until reviewed. The documentation handoff PR may be stacked on PR #15; do not merge or rebase the stack without checking current GitHub state.
 - The current project plan is documentation, not permission to merge, release, or change production Home Assistant configuration.

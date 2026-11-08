@@ -197,6 +197,57 @@
                                            Foreground="#A5AAC4" FontSize="12" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
+
+                        <Border Background="#11162A" CornerRadius="10" Padding="14">
+                            <StackPanel Spacing="12">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Spacing="3">
+                                        <TextBlock Text="Your entities" FontSize="16" FontWeight="SemiBold" Foreground="White" />
+                                        <TextBlock x:Name="EntityCountText" Text="No entities loaded" FontSize="11" Foreground="#8D92AD" />
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Content="Refresh" Click="OnRefreshEntitiesClicked"
+                                            Background="#282E48" Foreground="#D8DBEA" BorderThickness="0"
+                                            CornerRadius="8" Padding="12,7" />
+                                </Grid>
+                                <TextBox x:Name="EntitySearchInput" PlaceholderText="Search by name, entity ID or domain…"
+                                         TextChanged="OnEntitySearchChanged"
+                                         Background="#1A2038" Foreground="White" BorderBrush="#39415F"
+                                         CornerRadius="8" Padding="10,7" />
+                                <TextBlock x:Name="EntityEmptyText" Text="Connect Home Assistant to discover your entities."
+                                           Foreground="#A5AAC4" FontSize="12" TextWrapping="Wrap" />
+                                <ListView x:Name="EntityListView" MaxHeight="360" SelectionMode="None"
+                                          Background="Transparent" BorderThickness="0"
+                                          ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#1A2038" CornerRadius="8" Padding="10" Margin="0,0,0,6">
+                                                <Grid ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Spacing="3">
+                                                        <TextBlock Text="{Binding FriendlyName}" Foreground="White"
+                                                                   FontSize="12" FontWeight="SemiBold" />
+                                                        <TextBlock Text="{Binding EntityId}" Foreground="#8D92AD"
+                                                                   FontSize="10" />
+                                                    </StackPanel>
+                                                    <Border Grid.Column="1" Background="#282E48" CornerRadius="6"
+                                                            Padding="8,5" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding State}" Foreground="#D8DBEA" FontSize="10" />
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </StackPanel>
+                        </Border>
+
                         <TextBlock Text="Your refresh token is stored in Windows Credential Manager. Desktop Companion does not store your Home Assistant password."
                                    FontSize="11" Foreground="#8D92AD" TextWrapping="Wrap" />
                     </StackPanel>

@@ -14,6 +14,8 @@ Keep the application shell native with WinUI 3, and embed the real Home Assistan
 - WinUI 3 owns the application window, navigation, connection settings, tray, notifications, and Windows-specific companion features.
 - WebView2 renders the user's Home Assistant dashboard and retains Home Assistant's own cards, themes, controls, and dashboard configuration.
 - The dashboard navigates to the configured Home Assistant instance root, preserving any reverse-proxy path prefix.
+- The embedded URL includes the Kiosk Mode `?kiosk` query parameter by default so the Home Assistant frontend can hide its own header and navigation while retaining the configured Lovelace dashboard. This requires the Kiosk Mode frontend resource to be installed in Home Assistant; Desktop Companion does not inject CSS into or patch the Home Assistant frontend.
+- An explicit `disable_km` parameter in the configured instance URL is respected as an opt-out.
 - WebView2 uses a dedicated persistent user-data folder beneath the current Windows user's LocalAppData directory.
 - The Home Assistant frontend performs its own sign-in in the embedded browser profile. This frontend session is separate from the native OAuth session used by REST and WebSocket clients.
 - Native OAuth access and refresh tokens are never injected into the page, exposed through a JavaScript bridge, or stored in WebView2.

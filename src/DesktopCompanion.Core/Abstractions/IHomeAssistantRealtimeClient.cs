@@ -11,5 +11,6 @@ public interface IHomeAssistantRealtimeClient
     IAsyncEnumerable<HomeAssistantEvent> SubscribeToStateChangesAsync(
         Uri baseUri,
         string accessToken,
+        Action? connectionEstablished = null,
         CancellationToken cancellationToken = default);
 }

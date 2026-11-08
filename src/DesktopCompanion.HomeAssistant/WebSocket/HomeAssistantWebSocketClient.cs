@@ -20,6 +20,7 @@ public sealed class HomeAssistantWebSocketClient : IHomeAssistantRealtimeClient
     public async IAsyncEnumerable<HomeAssistantEvent> SubscribeToStateChangesAsync(
         Uri baseUri,
         string accessToken,
+        Action? connectionEstablished = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(baseUri);
@@ -111,6 +112,8 @@ public sealed class HomeAssistantWebSocketClient : IHomeAssistantRealtimeClient
                         : $"Home Assistant rejected the state-change subscription: {reason}");
             }
         }
+
+        connectionEstablished?.Invoke();
 
         while (!cancellationToken.IsCancellationRequested && socket.State == WebSocketState.Open)
         {

@@ -251,9 +251,11 @@ public sealed partial class MainWindow : Window
             // is missing. Windows 11 normally includes it.
             _ = CoreWebView2Environment.GetAvailableBrowserVersionString();
 
-            var environment = await CoreWebView2Environment.CreateAsync(
-                null, _webViewUserDataFolder, null);
-            await HomeAssistantWebView.EnsureCoreWebView2Async(environment);
+            Environment.SetEnvironmentVariable(
+                "WEBVIEW2_USER_DATA_FOLDER",
+                _webViewUserDataFolder,
+                EnvironmentVariableTarget.Process);
+            await HomeAssistantWebView.EnsureCoreWebView2Async();
 
             var core = HomeAssistantWebView.CoreWebView2;
             core.Settings.AreDevToolsEnabled = false;

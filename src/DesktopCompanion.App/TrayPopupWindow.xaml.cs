@@ -44,6 +44,8 @@ public sealed partial class TrayPopupWindow : Window
 
     public void ShowNearCursor()
     {
+        UpdateUptime();
+
         if (!GetCursorPos(out var cursor))
         {
             cursor = new NativePoint(0, 0);

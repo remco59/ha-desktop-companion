@@ -16,10 +16,8 @@ class DesktopCompanionConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
-        """Ask for a friendly name for the Windows device."""
+        """Ask for a friendly name for this Windows device."""
         if user_input is not None:
-            await self.async_set_unique_id("desktop-companion-local-instance")
-            self._abort_if_unique_id_configured()
             return self.async_create_entry(
                 title=user_input[CONF_NAME],
                 data={CONF_NAME: user_input[CONF_NAME]},

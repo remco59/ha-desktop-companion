@@ -155,6 +155,53 @@
                     </Grid>
                 </StackPanel>
 
+
+                <Border x:Name="HomeAssistantContent" Background="#1A1E34" CornerRadius="14" Padding="24"
+                        Visibility="Collapsed">
+                    <StackPanel Spacing="18" MaxWidth="720">
+                        <StackPanel Spacing="5">
+                            <TextBlock Text="Connect your Home Assistant instance" FontSize="20"
+                                       FontWeight="SemiBold" Foreground="White" />
+                            <TextBlock Text="Use the same URL you normally open in your browser. Sign-in happens securely on the Home Assistant website."
+                                       FontSize="12" Foreground="#A5AAC4" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="INSTANCE URL" FontSize="10" CharacterSpacing="90" Foreground="#A5AAC4" />
+                            <TextBox x:Name="HomeAssistantUrlInput"
+                                     PlaceholderText="http://homeassistant.local:8123"
+                                     Background="#11162A" Foreground="White"
+                                     BorderBrush="#39415F" CornerRadius="8" Padding="12,9" />
+                            <TextBlock Text="Include http:// or https:// and any reverse-proxy path prefix."
+                                       FontSize="11" Foreground="#8D92AD" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button x:Name="ConnectHomeAssistantButton" Content="Connect Home Assistant"
+                                    Click="OnConnectHomeAssistantClicked"
+                                    Background="#8755E8" Foreground="White" BorderThickness="0"
+                                    CornerRadius="8" Padding="16,10" />
+                            <Button x:Name="DisconnectHomeAssistantButton" Content="Disconnect"
+                                    Click="OnDisconnectHomeAssistantClicked"
+                                    Background="#282E48" Foreground="#D8DBEA" BorderThickness="0"
+                                    CornerRadius="8" Padding="16,10" IsEnabled="False" />
+                        </StackPanel>
+                        <Border Background="#11162A" CornerRadius="10" Padding="14">
+                            <StackPanel Spacing="6">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Ellipse x:Name="ConnectionStatusDot" Width="8" Height="8" Fill="#E0A94D"
+                                             VerticalAlignment="Center" />
+                                    <TextBlock x:Name="ConnectionStatusTitle" Text="Not connected"
+                                               Foreground="White" FontSize="13" FontWeight="SemiBold" />
+                                </StackPanel>
+                                <TextBlock x:Name="ConnectionStatusDetail"
+                                           Text="Enter your Home Assistant URL to get started."
+                                           Foreground="#A5AAC4" FontSize="12" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Your refresh token is stored in Windows Credential Manager. Desktop Companion does not store your Home Assistant password."
+                                   FontSize="11" Foreground="#8D92AD" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
                 <Border x:Name="PlaceholderContent" Background="#1A1E34" CornerRadius="14" Padding="24"
                         Visibility="Collapsed">
                     <StackPanel Spacing="9">

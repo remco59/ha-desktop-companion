@@ -60,8 +60,13 @@ public partial class App : Application
 
     private void ShowSettings()
     {
-        // Settings navigation will be connected when its first functional screen lands.
-        ShowDashboard();
+        if (_isExiting || _mainWindow is null)
+        {
+            return;
+        }
+
+        _trayPopupWindow?.AppWindow.Hide();
+        _mainWindow.ShowSettingsFromTray();
     }
 
     private void ExitApplication()

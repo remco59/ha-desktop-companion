@@ -421,7 +421,7 @@ public sealed partial class MainWindow : Window
         {
             "Overview" => "Your PC and Home Assistant, in one place.",
             "Home Assistant" => "Connection and account settings for your smart home.",
-            "Dashboard" => "The actual Home Assistant interface, embedded in your Windows app.",
+            "Dashboard" => "Your Home Assistant dashboard, without its navigation chrome.",
             "Sensors" => "Discover and configure Windows telemetry.",
             "Actions" => "Build actions that work across Windows and Home Assistant.",
             "Applications & Media" => "Manage your applications and media controls.",

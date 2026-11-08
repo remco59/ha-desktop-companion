@@ -1,3 +1,4 @@
+using Xunit;
 using DesktopCompanion.Core.Dashboards;
 
 namespace DesktopCompanion.Tests.Dashboards;

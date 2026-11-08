@@ -1,3 +1,4 @@
+using Xunit;
 using DesktopCompanion.Core.Dashboards;
 using DesktopCompanion.Core.Models;
 

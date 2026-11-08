@@ -223,7 +223,6 @@ public sealed partial class MainWindow : Window
     private async Task LoadDashboardAsync()
     {
         if (_dashboardUri is null) { UpdateDashboardAvailability(); return; }
-        if (_webViewInitializing) return;
         if (_webViewInitialized && _lastNavigatedDashboardUri is not null &&
             Uri.Compare(_lastNavigatedDashboardUri, _dashboardUri, UriComponents.AbsoluteUri,
                 UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase) == 0)
@@ -235,6 +234,12 @@ public sealed partial class MainWindow : Window
             HomeAssistantWebView.Visibility = Visibility.Visible;
             DashboardStatusText.Text = $"Preparing {_selectedDashboard.Name}…";
             await EnsureDashboardWebViewAsync();
+            if (_dashboardUri is null) return;
+            if (_lastNavigatedDashboardUri is not null &&
+                Uri.Compare(_lastNavigatedDashboardUri, _dashboardUri, UriComponents.AbsoluteUri,
+                    UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase) == 0)
+                return;
+
             var target = _dashboardUri.AbsoluteUri;
             _selectedDashboardTargetUri = _dashboardUri;
             _lastNavigatedDashboardUri = _dashboardUri;
@@ -300,12 +305,7 @@ public sealed partial class MainWindow : Window
         }
         finally { _webViewInitializing = false; }
 
-        // Selection may change while WebView2 is being initialized. Navigate to
-        // the latest chosen dashboard, not the URL that was current at start-up.
-        if (_currentPage == "Dashboard" && _dashboardUri is not null &&
-            (_lastNavigatedDashboardUri is null ||
-             !string.Equals(_lastNavigatedDashboardUri.AbsoluteUri, _dashboardUri.AbsoluteUri, StringComparison.OrdinalIgnoreCase)))
-            await LoadDashboardAsync();
+
     }
 
     private void ShowDashboardError(Exception exception)

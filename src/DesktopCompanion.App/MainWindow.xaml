@@ -210,6 +210,13 @@
                                            FontSize="12" Foreground="#A7ADB7" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
+                        <Border Background="#171A1F" CornerRadius="10" Padding="14">
+                            <StackPanel Spacing="7">
+                                <TextBlock Text="Dashboard-only view" FontSize="14" FontWeight="SemiBold" Foreground="White" />
+                                <TextBlock Text="Desktop Companion requests a clean dashboard view automatically. To hide Home Assistant's own header and navigation, install the Kiosk Mode frontend resource through HACS. Without that resource, Home Assistant falls back to its normal interface."
+                                           FontSize="12" Foreground="#A7ADB7" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </Border>
                 <Border x:Name="PlaceholderContent" Background="#1C1F26" CornerRadius="14" Padding="24"

@@ -19,7 +19,13 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayName=Desktop Companion
-CloseApplications=yes
+; The main window normally hides to the tray when closed. During upgrades,
+; Restart Manager must be allowed to force-close the app after its normal close
+; request fails, otherwise the tray process can keep published files locked.
+CloseApplications=force
+; Only track the companion executable. The default filter also tracks every DLL,
+; which can cause unrelated .NET apps to block an otherwise safe per-user upgrade.
+CloseApplicationsFilter=DesktopCompanion.App.exe
 RestartApplications=no
 Uninstallable=yes
 
@@ -30,7 +36,10 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked
 
 [Files]
-Source: "..\artifacts\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Avoid rewriting unchanged .NET runtime DLLs (for example clrjit.dll) during
+; application-only upgrades. Still replace same-version app binaries when their
+; contents differ, which is common when the assembly version is unchanged.
+Source: "..\artifacts\publish\*"; DestDir: "{app}"; Flags: replacesameversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\Desktop Companion"; Filename: "{app}\DesktopCompanion.App.exe"

@@ -4,7 +4,15 @@ A native Windows companion for Home Assistant.
 
 Desktop Companion brings your Windows PC and smart home together in one approachable control centre. It is designed around a full Windows application and a configurable system-tray dashboard, with shared sensors, actions, widgets, and configuration.
 
-> **Project status:** Early development. The initial foundation is being established; features described here are planned, not yet implemented.
+> **Project status:** Early preview. The native WinUI 3 shell, tray experience, Home Assistant OAuth/REST/WebSocket connection, and embedded WebView2 dashboard are implemented. Dashboard-only Kiosk Mode has been verified by the user on Windows 11. Windows sensor publishing, pairing, native Windows controls, and the broader roadmap remain in development. See the [Product Plan & Development Handoff](docs/product-plan.md) for current status and next steps.
+
+## Dashboard presentation
+
+The embedded dashboard opens in dashboard-only mode by requesting the Home Assistant Kiosk Mode frontend resource with the `?kiosk` URL parameter. Install [**Kiosk Mode**](https://github.com/NemesisRE/kiosk-mode) through HACS in Home Assistant to hide Home Assistant's own header and navigation while keeping the actual Lovelace dashboard interactive. Without that frontend resource, Home Assistant displays its regular interface. The native Desktop Companion shell remains visible.
+
+## Project plan
+
+The [Product Plan & Development Handoff](docs/product-plan.md) is the source of truth for the product vision, architecture constraints, current verified baseline, delivery phases, and next implementation slice. The [implementation roadmap](docs/roadmap.md) provides a concise checklist.
 
 ## Product goals
 

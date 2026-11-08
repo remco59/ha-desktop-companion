@@ -70,6 +70,18 @@ public sealed partial class TrayPopupWindow : Window
         OpenDashboardButton.Focus(FocusState.Programmatic);
     }
 
+    public void UpdateHomeAssistantStatus(string title, string detail, bool connected, bool busy = false)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            HomeAssistantStatusText.Text = title;
+            HomeAssistantStatusDetail.Text = detail;
+            HomeAssistantStatusDot.Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                connected ? global::Windows.UI.Color.FromArgb(255, 98, 214, 174) :
+                global::Windows.UI.Color.FromArgb(255, 224, 169, 77));
+        });
+    }
+
     private void UpdateUptime()
     {
         var elapsed = TimeSpan.FromMilliseconds(Environment.TickCount64);

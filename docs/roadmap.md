@@ -19,8 +19,8 @@
 - [x] Add native tray icon host and tray pop-up window.
 - [x] Keep the main application alive when its window is closed.
 - [ ] Implement a full single-instance activation handoff.
-- [ ] Implement the application host and background lifecycle.
-- [ ] Add persistent settings and diagnostics.
+- [x] Implement the initial application host and background lifecycle.
+- [x] Add persistent non-secret instance settings; diagnostics remain open.
 - [x] Establish the first Windows CI build.
 
 ## Phase 2 — Home Assistant

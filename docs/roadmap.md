@@ -41,12 +41,14 @@ Status legend:
 - [x] Define core sensor descriptor and reading contracts.
 - [x] Add the initial Windows system provider scaffold (uptime, hostname, Windows version).
 - [x] Implement initial CPU, physical-memory, and uptime readings with stable IDs and units.
-- [ ] Implement storage capacity/used/free by volume and network throughput/adapter status.
+- [x] Implement storage capacity/used/available space and readiness per fixed/removable volume.
+- [x] Implement network adapter status and receive/send throughput per non-loopback adapter; first counter sample is a baseline, not a fabricated rate.
 - [ ] Add optional GPU and hardware temperature/fan providers only where supported, with capability diagnostics.
 - [x] Add a two-second sampler with last-known reading retention and explicit stale status.
 - [ ] Add provider registry, configurable sampling intervals, and sensor enable/disable preferences.
 - [x] Build the initial native Sensors page and CPU/memory/uptime Overview summaries.
 - [x] Compare CPU, memory, and uptime readings with Windows Task Manager on Windows 11; user accepted the values and approximately one-second display lag (2026-11-08).
+- [ ] Verify storage values for each mounted volume and network rates/status against Windows tools on Windows 11.
 - [ ] Verify sampling while in the tray and stale/error behaviour on Windows 11 hardware.
 
 ## Phase 3 — Secure Home Assistant pairing and telemetry
@@ -109,6 +111,6 @@ Status legend:
 
 The dashboard selector is in open draft PR #18; the user confirmed the Control dashboard renders on Windows 11. Multi-view persistence and reconnect acceptance remain open.
 
-The first CPU + physical-memory + uptime sensor slice is in draft PR #19, stacked on PR #18. Next implement storage and network readings, followed by the provider registry and configurable sampling preferences. Design the secure telemetry protocol before publishing sensors to Home Assistant.
+CPU, memory and uptime are implemented in draft PR #19 and were validated against Windows Task Manager on Windows 11. Per-volume storage and per-adapter network sensors are in draft PR #20, stacked on PR #19. Next add provider registration, configurable sampling intervals, sensor enable/disable preferences, and capability diagnostics. Design the secure telemetry protocol before publishing sensors to Home Assistant.
 
 See [the Product Plan](product-plan.md) for scope, implementation notes, acceptance criteria, and the session restart checklist.

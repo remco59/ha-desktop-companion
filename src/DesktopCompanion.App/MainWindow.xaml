@@ -282,6 +282,14 @@
                             </StackPanel>
                         </Border>
                     </Grid>
+                    <StackPanel x:Name="StorageSensorSection" Visibility="Collapsed" Spacing="8">
+                        <TextBlock Text="Storage volumes" FontSize="16" FontWeight="SemiBold" Foreground="White" />
+                        <StackPanel x:Name="StorageSensorCardsPanel" Spacing="8" />
+                    </StackPanel>
+                    <StackPanel x:Name="NetworkSensorSection" Visibility="Collapsed" Spacing="8">
+                        <TextBlock Text="Network adapters" FontSize="16" FontWeight="SemiBold" Foreground="White" />
+                        <StackPanel x:Name="NetworkSensorCardsPanel" Spacing="8" />
+                    </StackPanel>
                     <Border Background="#1C1F26" CornerRadius="12" Padding="18">
                         <StackPanel Spacing="7">
                             <TextBlock Text="System information" FontSize="15" FontWeight="SemiBold" Foreground="White" />

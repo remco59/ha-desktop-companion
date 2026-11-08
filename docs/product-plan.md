@@ -192,7 +192,7 @@ Acceptance:
 
 **Goal:** Show reliable Windows PC telemetry in Desktop Companion and prepare it for Home Assistant publishing.
 
-Current implementation note (2026-11-08): the first CPU + physical-memory + uptime slice is implemented in draft PR #19, stacked on dashboard PR #18. The user compared it with Windows Task Manager on Windows 11 and confirmed CPU (about 23% vs 21.9%), memory (55% vs 54.7%), and uptime (9h22) are consistent. Approximately one second of display lag is acceptable. The two-second sampling cadence remains unchanged. Storage and network are the next implementation slice.
+Current implementation note (2026-11-08): CPU + physical-memory + uptime are implemented in draft PR #19 and were compared with Windows Task Manager on Windows 11; the user confirmed CPU (about 23% vs 21.9%), memory (55% vs 54.7%), and uptime (9h22) are consistent. Approximately one second of display lag is accepted, and the two-second sampling cadence remains unchanged. Per-volume storage and per-adapter network throughput/status are being delivered in stacked draft PR #20.
 
 Initial sensor set:
 - CPU utilisation.
@@ -212,8 +212,9 @@ Work:
 - [x] Build the first native Sensors page with current CPU, memory, uptime, computer name, Windows version, and last-sample feedback.
 - [x] Add Overview summaries for CPU, memory, and uptime.
 - [ ] Add a provider registry, configurable sampling intervals, and sensor enable/disable preferences.
-- [ ] Implement storage capacity/used/free by volume.
-- [ ] Implement network throughput and adapter status.
+- [x] Enumerate fixed/removable Windows volumes with stable IDs and read capacity, used, available space and readiness.
+- [x] Enumerate non-loopback network adapters with stable IDs, current operational status, and receive/send throughput in bytes per second.
+- [x] Prime adapter counters before calculating throughput; receive/send rates share one cached counter sample and invalid/reset counters do not become readings.
 - [ ] Add capability diagnostics for optional hardware providers; keep GPU, temperatures, and fan speeds unavailable until a supported provider exists.
 
 Acceptance:
@@ -418,5 +419,6 @@ At the time of writing:
 - Windows CI for the current main commit passed in run [#42522021504](https://github.com/remco59/ha-desktop-companion/actions/runs/42522021504). Windows Package also passed for the preceding dashboard PR head [#42521816660](https://github.com/remco59/ha-desktop-companion/actions/runs/42521816660).
 - Real in-place installer upgrade acceptance remains outstanding and must stay visible until tested on Windows.
 - PR #18 — [native Home Assistant dashboard selector](https://github.com/remco59/ha-desktop-companion/pull/18) — open draft on `feat/native-dashboard-selector`. The user confirmed the Control dashboard opens in the embedded dashboard view on Windows 11 (2026-11-08); multi-view persistence and reconnect acceptance remain to be verified. Do not merge without explicit user permission.
-- PR #19 — [Windows CPU, memory, and uptime sensors](https://github.com/remco59/ha-desktop-companion/pull/19) — draft, stacked on PR #18. Windows CI and installer packaging passed; the user compared CPU, memory, and uptime with Windows Task Manager on Windows 11 and accepted the readings, including the roughly one-second display lag. Storage/network sensors remain the next slice.
+- PR #19 — [Windows CPU, memory, and uptime sensors](https://github.com/remco59/ha-desktop-companion/pull/19) — draft, stacked on PR #18. Windows CI and installer packaging passed; the user compared CPU, memory, and uptime with Windows Task Manager on Windows 11 and accepted the readings, including roughly one-second display lag.
+- PR #20 — [per-volume storage and per-adapter network sensors](https://github.com/remco59/ha-desktop-companion/pull/20) — draft, stacked on PR #19. Adds fixed/removable volume capacity/used/available/status and adapter status plus receive/send rates, with dynamic cards on the Sensors page.
 - The current project plan is documentation, not permission to merge, release, or change production Home Assistant configuration.

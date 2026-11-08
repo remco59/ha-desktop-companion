@@ -1,0 +1,14 @@
+<Application
+    x:Class="DesktopCompanion.App.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    RequestedTheme="Dark">
+    <Application.Resources>
+        <ResourceDictionary>
+            <SolidColorBrush x:Key="AppSurfaceBrush" Color="#111426" />
+            <SolidColorBrush x:Key="AppCardBrush" Color="#1A1E34" />
+            <SolidColorBrush x:Key="AppAccentBrush" Color="#9B6BFF" />
+            <SolidColorBrush x:Key="AppMutedBrush" Color="#A5AAC4" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

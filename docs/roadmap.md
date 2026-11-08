@@ -3,7 +3,7 @@
 ## Phase 0 — Technical validation
 
 - [x] Validate the WinUI 3 application and native tray host build.
-- [ ] Verify Home Assistant OAuth/application authentication approach.
+- [x] Verify Home Assistant OAuth/application authentication approach.
 - [ ] Specify and prototype the authenticated sensor telemetry bridge.
 - [ ] Verify basic Windows system sensor access without administrator elevation.
 - [ ] Confirm installer and runtime deployment strategy.
@@ -25,7 +25,7 @@
 
 ## Phase 2 — Home Assistant
 
-- [ ] Implement OAuth PKCE/token lifecycle.
+- [x] Implement OAuth PKCE/token lifecycle (pending live-instance acceptance test).
 - [x] Implement a one-connection WebSocket client and state-change subscription.
 - [x] Add a connection supervisor with reconnect/backoff and status events.
 - [ ] Add entity discovery, search, and favourites to the UI.

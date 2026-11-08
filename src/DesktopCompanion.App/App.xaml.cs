@@ -1,6 +1,4 @@
 using DesktopCompanion.Core.Models;
-using DesktopCompanion.Core.Abstractions;
-using DesktopCompanion.HomeAssistant.Rest;
 using DesktopCompanion.HomeAssistant.Authentication;
 using DesktopCompanion.HomeAssistant.Services;
 using DesktopCompanion.HomeAssistant.WebSocket;
@@ -17,7 +15,6 @@ public partial class App : Application
     private TrayIconHost? _trayIconHost;
     private HomeAssistantTokenProvider? _tokenProvider;
     private HomeAssistantConnectionSupervisor? _connectionSupervisor;
-    private IHomeAssistantClient? _homeAssistantClient;
     private Uri? _connectedInstance;
     private bool _isExiting;
 
@@ -34,14 +31,15 @@ public partial class App : Application
         _mainWindow = new MainWindow();
         _mainWindow.ConnectHomeAssistantRequested += OnConnectHomeAssistantRequested;
         _mainWindow.DisconnectHomeAssistantRequested += OnDisconnectHomeAssistantRequested;
-        _mainWindow.RefreshEntitiesRequested += OnRefreshEntitiesRequested;
-        _mainWindow.ToggleEntityRequested += OnToggleEntityRequested;
 
         var savedUrl = AppSettingsStore.LoadHomeAssistantUrl();
-        if (!string.IsNullOrWhiteSpace(savedUrl))
+        if (!string.IsNullOrWhiteSpace(savedUrl) &&
+            Uri.TryCreate(savedUrl, UriKind.Absolute, out var savedUri) &&
+            (savedUri.Scheme == Uri.UriSchemeHttp || savedUri.Scheme == Uri.UriSchemeHttps))
         {
-            _mainWindow.SetHomeAssistantUrl(savedUrl);
-            _ = RestoreHomeAssistantConnectionAsync(savedUrl);
+            _mainWindow.SetHomeAssistantUrl(savedUri.AbsoluteUri);
+            _mainWindow.SetDashboardUri(savedUri);
+            _ = RestoreHomeAssistantConnectionAsync(savedUri);
         }
 
         _trayPopupWindow = new TrayPopupWindow();
@@ -64,12 +62,15 @@ public partial class App : Application
 
         _mainWindow.UpdateConnectionStatus(
             authenticate ? "Waiting for sign-in" : "Restoring connection",
-            authenticate ? "Complete the approval in your browser. This window will update when you return." : "Refreshing your saved Home Assistant session.",
-            false,
+            authenticate
+                ? "Complete the approval in your browser. The native connection will update when you return."
+                : "Refreshing your saved Home Assistant session.",
+            connected: false,
             busy: true);
+
         _trayPopupWindow?.UpdateHomeAssistantStatus(
             authenticate ? "Signing in…" : "Connecting…",
-            "Home Assistant", false, busy: true);
+            "Home Assistant", connected: false, busy: true);
 
         try
         {
@@ -83,122 +84,65 @@ public partial class App : Application
 
             _connectedInstance = instanceUri;
             AppSettingsStore.SaveHomeAssistantUrl(instanceUri.AbsoluteUri);
+            _mainWindow.SetDashboardUri(instanceUri);
 
-            _homeAssistantClient = new HomeAssistantRestClient(new HttpClient());
             _connectionSupervisor = new HomeAssistantConnectionSupervisor(new HomeAssistantWebSocketClient());
             _connectionSupervisor.StateChanged += (_, state) =>
             {
                 var connected = state.Status == HomeAssistantConnectionStatus.Connected;
                 var statusTitle = state.Status switch
-                    {
-                        HomeAssistantConnectionStatus.Connected => "Connected",
-                        HomeAssistantConnectionStatus.Connecting => "Connecting",
-                        HomeAssistantConnectionStatus.Reconnecting => "Reconnecting",
-                        HomeAssistantConnectionStatus.AuthenticationRequired => "Sign-in required",
-                        HomeAssistantConnectionStatus.Faulted => "Connection error",
-                        _ => "Disconnected"
-                    };
+                {
+                    HomeAssistantConnectionStatus.Connected => "Connected",
+                    HomeAssistantConnectionStatus.Connecting => "Connecting",
+                    HomeAssistantConnectionStatus.Reconnecting => "Reconnecting",
+                    HomeAssistantConnectionStatus.AuthenticationRequired => "Sign-in required",
+                    HomeAssistantConnectionStatus.Faulted => "Connection error",
+                    _ => "Disconnected"
+                };
+
                 var statusDetail = state.Message ?? "Home Assistant is not connected.";
                 var isBusy = state.Status is HomeAssistantConnectionStatus.Connecting or HomeAssistantConnectionStatus.Reconnecting;
                 _mainWindow?.UpdateConnectionStatus(statusTitle, statusDetail, connected, busy: isBusy);
                 _trayPopupWindow?.UpdateHomeAssistantStatus(statusTitle, statusDetail, connected, busy: isBusy);
-                if (connected) _ = RefreshEntitiesAsync();
             };
 
             await _connectionSupervisor.StartAsync(instanceUri, _tokenProvider.GetAccessTokenAsync);
-            _ = RefreshEntitiesAsync();
         }
         catch (OperationCanceledException)
         {
-            _mainWindow.UpdateConnectionStatus("Sign-in cancelled", "You can try connecting again at any time.", false);
-            _trayPopupWindow?.UpdateHomeAssistantStatus("Not connected", "Connect in the app", false);
+            _mainWindow.UpdateConnectionStatus(
+                "Sign-in cancelled",
+                "You can try connecting again at any time.",
+                connected: false);
+            _trayPopupWindow?.UpdateHomeAssistantStatus("Not connected", "Connect in the app", connected: false);
             await StopHomeAssistantAsync();
         }
         catch (Exception exception)
         {
-            _mainWindow.UpdateConnectionStatus("Could not connect", exception.Message, false);
-            _trayPopupWindow?.UpdateHomeAssistantStatus("Could not connect", exception.Message, false);
+            _mainWindow.UpdateConnectionStatus("Could not connect", exception.Message, connected: false);
+            _trayPopupWindow?.UpdateHomeAssistantStatus("Could not connect", exception.Message, connected: false);
             await StopHomeAssistantAsync();
         }
     }
 
-    private async Task RestoreHomeAssistantConnectionAsync(string savedUrl)
+    private async Task RestoreHomeAssistantConnectionAsync(Uri savedUri)
     {
-        if (!Uri.TryCreate(savedUrl, UriKind.Absolute, out var uri) ||
-            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
-        {
-            _mainWindow?.UpdateConnectionStatus("Check the instance URL", "The saved Home Assistant URL is invalid.", false);
-            return;
-        }
-
-        await ConnectHomeAssistantAsync(uri, authenticate: false);
+        await ConnectHomeAssistantAsync(savedUri, authenticate: false);
     }
 
     private async void OnDisconnectHomeAssistantRequested() => await DisconnectHomeAssistantAsync();
-
-    private async void OnRefreshEntitiesRequested() => await RefreshEntitiesAsync();
-
-    private async void OnToggleEntityRequested(string entityId) => await ToggleEntityAsync(entityId);
-
-    private async Task ToggleEntityAsync(string entityId)
-    {
-        if (_mainWindow is null || _tokenProvider is null || _homeAssistantClient is null || _connectedInstance is null) return;
-        var separator = entityId.IndexOf('.');
-        if (separator <= 0) return;
-        var domain = entityId[..separator];
-        if (domain is not ("light" or "switch" or "input_boolean" or "fan" or "automation"))
-        {
-            _mainWindow.SetEntityActionFeedback($"Toggle is not supported for {domain} entities.");
-            return;
-        }
-
-        try
-        {
-            _mainWindow.SetEntityActionFeedback($"Sending toggle command to {entityId}…");
-            var token = await _tokenProvider.GetAccessTokenAsync();
-            await _homeAssistantClient.CallServiceAsync(
-                _connectedInstance, token, domain, "toggle",
-                new Dictionary<string, object?> { ["entity_id"] = entityId });
-            await RefreshEntitiesAsync();
-            _mainWindow.SetEntityActionFeedback($"Toggle command sent to {entityId}.");
-        }
-        catch (Exception exception)
-        {
-            _mainWindow.SetEntityActionFeedback($"Could not control {entityId}: {exception.Message}");
-        }
-    }
-
-    private async Task RefreshEntitiesAsync()
-    {
-        if (_mainWindow is null || _tokenProvider is null || _homeAssistantClient is null || _connectedInstance is null)
-        {
-            _mainWindow?.UpdateEntities(Array.Empty<HomeAssistantEntity>(), "Connect Home Assistant to discover your entities.");
-            return;
-        }
-
-        try
-        {
-            var token = await _tokenProvider.GetAccessTokenAsync();
-            var entities = await _homeAssistantClient.GetEntitiesAsync(_connectedInstance, token);
-            _mainWindow.UpdateEntities(entities);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            _mainWindow.UpdateEntities(Array.Empty<HomeAssistantEntity>(), "Sign in to Home Assistant to load entities.");
-        }
-        catch (Exception exception)
-        {
-            _mainWindow.UpdateEntities(Array.Empty<HomeAssistantEntity>(), $"Could not load entities: {exception.Message}");
-        }
-    }
 
     private async Task DisconnectHomeAssistantAsync()
     {
         await StopHomeAssistantAsync(clearCredentials: true);
         _connectedInstance = null;
         AppSettingsStore.SaveHomeAssistantUrl(string.Empty);
-        _mainWindow?.UpdateConnectionStatus("Disconnected", "The saved Home Assistant sign-in has been removed from this PC.", false);
-        _trayPopupWindow?.UpdateHomeAssistantStatus("Not connected", "Connect in the app", false);
+        _mainWindow?.SetDashboardUri(null);
+        _mainWindow?.UpdateConnectionStatus(
+            "Disconnected",
+            "The native Home Assistant connection and saved sign-in have been removed from this PC.",
+            connected: false);
+        _trayPopupWindow?.UpdateHomeAssistantStatus("Not connected", "Connect in the app", connected: false);
     }
 
     private async Task StopHomeAssistantAsync(bool clearCredentials = false)
@@ -208,12 +152,6 @@ public partial class App : Application
             await _connectionSupervisor.StopAsync();
             await _connectionSupervisor.DisposeAsync();
             _connectionSupervisor = null;
-        }
-
-        if (_homeAssistantClient is IDisposable restClientDisposable)
-        {
-            restClientDisposable.Dispose();
-            _homeAssistantClient = null;
         }
 
         if (_tokenProvider is not null)
@@ -235,6 +173,7 @@ public partial class App : Application
         if (_isExiting || _mainWindow is null) return;
         _trayPopupWindow?.AppWindow.Hide();
         _mainWindow.ShowFromTray();
+        _mainWindow.NavigateToDashboard();
     }
 
     private void ShowSettings()

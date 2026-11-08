@@ -34,7 +34,7 @@ Status legend:
 - [x] Remember the selected dashboard and provide a return-to-default action.
 - [x] Preserve reverse-proxy paths, existing query parameters, and Kiosk Mode behaviour when switching dashboards.
 - [x] Add dashboard navigation/loading/error feedback while reusing the persistent WebView2 session.
-- [ ] Verify dashboard switching and reconnection behaviour against the live Home Assistant instance on Windows.
+- [ ] Verify Control, Media, and System switching, reconnect behaviour, and remembered selection against the live Home Assistant instance on Windows.
 
 ## Phase 2 — Windows sensor engine
 
@@ -103,6 +103,6 @@ Status legend:
 
 ## Next implementation slice
 
-The native dashboard selector is implemented on `feat/native-dashboard-selector` and awaits Windows CI and real Home Assistant validation. After review/merge approval, implement the first Windows sensor vertical slice (CPU + memory + uptime). Design the secure telemetry protocol before publishing any sensor to Home Assistant.
+The native dashboard selector is implemented in open PR #18, with Control, Media, and System presets and Control as the default. Latest Windows CI passed; real Windows/Home Assistant acceptance is still required. Do not merge without explicit user approval. After acceptance and merge approval, implement the first Windows sensor vertical slice (CPU + memory + uptime). Design the secure telemetry protocol before publishing any sensor to Home Assistant.
 
 See [the Product Plan](product-plan.md) for scope, implementation notes, acceptance criteria, and the session restart checklist.

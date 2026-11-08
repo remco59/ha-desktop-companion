@@ -248,7 +248,7 @@
                                 CornerRadius="8" Padding="13,8" />
                     </Grid>
                     <Border Grid.Row="1" Background="#171A1F" BorderBrush="#343A44"
-                            BorderThickness="1" CornerRadius="12" ClipToBounds="True">
+                            BorderThickness="1" CornerRadius="12">
                         <Grid>
                             <WebView2 x:Name="HomeAssistantWebView"
                                       HorizontalAlignment="Stretch"

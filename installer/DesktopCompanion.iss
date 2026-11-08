@@ -23,6 +23,9 @@ UninstallDisplayName=Desktop Companion
 ; Restart Manager must be allowed to force-close the app after its normal close
 ; request fails, otherwise the tray process can keep published files locked.
 CloseApplications=force
+; Only track the companion executable. The default filter also tracks every DLL,
+; which can cause unrelated .NET apps to block an otherwise safe per-user upgrade.
+CloseApplicationsFilter=DesktopCompanion.App.exe
 RestartApplications=no
 Uninstallable=yes
 

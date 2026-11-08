@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using DesktopCompanion.Core.Models;
 
 namespace DesktopCompanion.Core.Abstractions;
@@ -12,5 +11,5 @@ public interface IHomeAssistantRealtimeClient
     IAsyncEnumerable<HomeAssistantEvent> SubscribeToStateChangesAsync(
         Uri baseUri,
         string accessToken,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default);
 }

@@ -4,7 +4,7 @@ A native Windows companion for Home Assistant.
 
 Desktop Companion brings your Windows PC and smart home together in one approachable control centre. It is designed around a full Windows application and a configurable system-tray dashboard, with shared sensors, actions, widgets, and configuration.
 
-> **Project status:** Early development. The initial foundation is being established; features described here are planned, not yet implemented.
+> **Project status:** Early preview. The current build includes the WinUI desktop shell, system-tray popup, Home Assistant OAuth sign-in, managed WebSocket connection, and read-only entity discovery/search. Windows hardware telemetry, service controls, dashboards, and the companion integration are still in development. The app has not yet been validated against a live Home Assistant instance.
 
 ## Product goals
 
@@ -40,7 +40,7 @@ See [the implementation roadmap](docs/roadmap.md) and [architecture overview](do
 
 ## Building
 
-The Windows application is built on Windows with the .NET 10 SDK, Visual Studio 2026 (or an equivalent WinUI 3 toolchain), and Windows App SDK 2.6.5. Build instructions will be expanded as the project foundation lands.
+The Windows application is built on Windows with the .NET 10 SDK, Visual Studio 2026 (or an equivalent WinUI 3 toolchain), and Windows App SDK 2.6.5. The `Windows Package` GitHub Actions workflow publishes a self-contained x64 build and creates a per-user Inno Setup installer. On Windows, restore and build with `dotnet restore src/DesktopCompanion.sln` and `dotnet build src/DesktopCompanion.sln -c Release`. The installer workflow is still in preview and must pass its first packaging run before the artifact is considered ready for manual testing.
 
 ## Open source
 

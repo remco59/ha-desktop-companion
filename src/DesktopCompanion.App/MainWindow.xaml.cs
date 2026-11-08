@@ -247,6 +247,10 @@ public sealed partial class MainWindow : Window
         {
             Directory.CreateDirectory(_webViewUserDataFolder);
 
+            // Fail early with a clear UI message if the Evergreen WebView2 Runtime
+            // is missing. Windows 11 normally includes it.
+            _ = CoreWebView2Environment.GetAvailableBrowserVersionString();
+
             var environment = await CoreWebView2Environment.CreateAsync(
                 userDataFolder: _webViewUserDataFolder);
             await HomeAssistantWebView.EnsureCoreWebView2Async(environment);
@@ -254,7 +258,16 @@ public sealed partial class MainWindow : Window
             var core = HomeAssistantWebView.CoreWebView2;
             core.Settings.AreDevToolsEnabled = false;
             core.Settings.IsStatusBarEnabled = false;
-            core.Settings.AreDefaultContextMenusEnabled = true;
+            core.Settings.AreDefaultContextMenusEnabled = false;
+
+            core.NavigationStarting += (_, args) =>
+            {
+                if (!Uri.TryCreate(args.Uri, UriKind.Absolute, out var navigationUri) ||
+                    (navigationUri.Scheme != Uri.UriSchemeHttp && navigationUri.Scheme != Uri.UriSchemeHttps))
+                {
+                    args.Cancel = true;
+                }
+            };
 
             core.NavigationCompleted += (_, args) =>
             {

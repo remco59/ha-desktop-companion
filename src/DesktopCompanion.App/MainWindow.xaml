@@ -38,7 +38,7 @@
                     <Button Tag="Dashboards" Content="  Dashboards" Click="OnNavigationClicked"
                             HorizontalContentAlignment="Left" Background="Transparent" Foreground="#C4C7D8"
                             BorderThickness="0" Padding="12,10" />
-                    <Button Tag="Applications & Media" Content="  Applications &amp; Media" Click="OnNavigationClicked"
+                    <Button Tag="Applications &amp; Media" Content="  Applications &amp; Media" Click="OnNavigationClicked"
                             HorizontalContentAlignment="Left" Background="Transparent" Foreground="#C4C7D8"
                             BorderThickness="0" Padding="12,10" />
                     <Button Tag="Notifications" Content="  Notifications" Click="OnNavigationClicked"

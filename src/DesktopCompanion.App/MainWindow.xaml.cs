@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.Web.WebView2.Core;
 using Windows.UI;
 
@@ -22,6 +23,8 @@ public sealed partial class MainWindow : Window
     private readonly Dictionary<string, CheckBox> _sensorPublishingCheckBoxes = new(StringComparer.Ordinal);
     private bool _homeAssistantPublishingConnected;
     private bool _homeAssistantDevicePaired;
+    private bool _isUpdatingAudioControls;
+    private bool _audioIsMuted;
 
     private IReadOnlyList<DashboardDefinition> _dashboards = [DashboardDefinition.Default];
     private DashboardDefinition _selectedDashboard = DashboardDefinition.Default;
@@ -53,6 +56,9 @@ public sealed partial class MainWindow : Window
     public event Action? DisconnectHomeAssistantRequested;
     public event Action<IReadOnlyCollection<string>>? PairSensorsRequested;
     public event Action? UnpairSensorsRequested;
+    public event Action<double>? MasterVolumeChangeRequested;
+    public event Action<bool>? AudioMuteChangeRequested;
+    public event Action? AudioRefreshRequested;
 
     public void SetHomeAssistantUrl(string url) => HomeAssistantUrlInput.Text = url;
 
@@ -116,6 +122,51 @@ public sealed partial class MainWindow : Window
     public void ShowFromTray() { AppWindow.Show(); Activate(); }
     public void ShowSettingsFromTray() { ShowFromTray(); NavigateTo("Home Assistant"); }
     public void AllowClose() => _allowClose = true;
+
+    public void SetAudioEndpointState(AudioEndpointState state)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            _isUpdatingAudioControls = true;
+            _audioIsMuted = state.IsMuted;
+            MasterVolumeSlider.Value = Math.Clamp(state.VolumePercent, 0d, 100d);
+            MasterVolumeSlider.IsEnabled = true;
+            AudioVolumeValueText.Text = $"{state.VolumePercent:0}%";
+            AudioMuteButton.Content = state.IsMuted ? "Unmute" : "Mute";
+            AudioMuteButton.IsEnabled = true;
+            AudioDeviceStateText.Text = state.IsMuted ? "Muted" : "Output active";
+            AudioControlStatusText.Text = "Connected to the default Windows playback endpoint.";
+            _isUpdatingAudioControls = false;
+        });
+    }
+
+    public void SetAudioControlError(string message)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            _isUpdatingAudioControls = true;
+            MasterVolumeSlider.IsEnabled = false;
+            AudioMuteButton.IsEnabled = false;
+            AudioDeviceStateText.Text = "Unavailable";
+            AudioControlStatusText.Text = message;
+            _isUpdatingAudioControls = false;
+        });
+    }
+
+    private void OnMasterVolumeSliderChanged(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (!_isUpdatingAudioControls && MasterVolumeSlider.IsEnabled)
+        {
+            AudioVolumeValueText.Text = $"{e.NewValue:0}%";
+            MasterVolumeChangeRequested?.Invoke(e.NewValue);
+        }
+    }
+
+    private void OnAudioMuteClicked(object sender, RoutedEventArgs e) =>
+        AudioMuteChangeRequested?.Invoke(!_audioIsMuted);
+
+    private void OnRefreshAudioClicked(object sender, RoutedEventArgs e) =>
+        AudioRefreshRequested?.Invoke();
 
     public void UpdateConnectionStatus(string title, string detail, bool connected, bool busy = false)
     {
@@ -720,11 +771,13 @@ public sealed partial class MainWindow : Window
         var isHomeAssistant = page == "Home Assistant";
         var isDashboard = page == "Dashboard";
         var isSensors = page == "Sensors";
-        var isPlaceholder = !isOverview && !isHomeAssistant && !isDashboard && !isSensors;
+        var isApplicationsMedia = page == "Applications & Media";
+        var isPlaceholder = !isOverview && !isHomeAssistant && !isDashboard && !isSensors && !isApplicationsMedia;
         ScrollablePageContent.Visibility = isDashboard ? Visibility.Collapsed : Visibility.Visible;
         OverviewContent.Visibility = isOverview ? Visibility.Visible : Visibility.Collapsed;
         HomeAssistantContent.Visibility = isHomeAssistant ? Visibility.Visible : Visibility.Collapsed;
         SensorsContent.Visibility = isSensors ? Visibility.Visible : Visibility.Collapsed;
+        ApplicationsMediaContent.Visibility = isApplicationsMedia ? Visibility.Visible : Visibility.Collapsed;
         PlaceholderContent.Visibility = isPlaceholder ? Visibility.Visible : Visibility.Collapsed;
         DashboardContent.Visibility = isDashboard ? Visibility.Visible : Visibility.Collapsed;
         PageSubtitle.Text = page switch
@@ -734,12 +787,13 @@ public sealed partial class MainWindow : Window
             "Dashboard" => "Your Home Assistant dashboards, without Home Assistant's navigation chrome.",
             "Sensors" => "Discover and configure Windows telemetry.",
             "Actions" => "Build actions that work across Windows and Home Assistant.",
-            "Applications & Media" => "Manage your applications and media controls.",
+            "Applications & Media" => "Control Windows audio and media playback.",
             "Notifications" => "Choose which events appear on your desktop.",
             "Settings" => "Configure Desktop Companion.",
             _ => "Desktop Companion"
         };
         SetNavigationSelection(page);
+        if (isApplicationsMedia) AudioRefreshRequested?.Invoke();
         if (isDashboard)
         {
             UpdateDashboardAvailability();

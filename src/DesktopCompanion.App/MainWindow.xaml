@@ -319,6 +319,62 @@
                     </Border>
                 </StackPanel>
 
+                <StackPanel x:Name="ApplicationsMediaContent" Visibility="Collapsed" Spacing="16">
+                    <Border Background="#1C1F26" CornerRadius="14" Padding="22">
+                        <StackPanel Spacing="16">
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="Windows audio" FontSize="19" FontWeight="SemiBold" Foreground="White" />
+                                <TextBlock Text="Control the master volume and mute state of your default Windows playback device."
+                                           FontSize="12" Foreground="#A7ADB7" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Border Background="#252A33" CornerRadius="10" Padding="16">
+                                <StackPanel Spacing="12">
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Default playback device" FontSize="13" FontWeight="SemiBold" Foreground="White" />
+                                        <TextBlock Grid.Column="1" x:Name="AudioVolumeValueText" Text="—" FontSize="18" FontWeight="SemiBold" Foreground="White" />
+                                    </Grid>
+                                    <Slider x:Name="MasterVolumeSlider" Minimum="0" Maximum="100" Value="50"
+                                            StepFrequency="1" ValueChanged="OnMasterVolumeSliderChanged"
+                                            IsEnabled="False"
+                                            AutomationProperties.Name="Windows master volume" />
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button x:Name="AudioMuteButton" Content="Mute"
+                                                Click="OnAudioMuteClicked"
+                                                Background="#343B47" Foreground="White" BorderThickness="0"
+                                                CornerRadius="8" Padding="16,9" IsEnabled="False" />
+                                        <Button Grid.Column="1" Content="Refresh"
+                                                Click="OnRefreshAudioClicked"
+                                                Background="#343B47" Foreground="#DFE3E8" BorderThickness="0"
+                                                CornerRadius="8" Padding="16,9" />
+                                        <TextBlock Grid.Column="3" x:Name="AudioDeviceStateText" Text="Waiting for Windows audio…"
+                                                   FontSize="11" Foreground="#A7ADB7" VerticalAlignment="Center" />
+                                    </Grid>
+                                    <TextBlock x:Name="AudioControlStatusText"
+                                               Text="Reading the current Windows playback endpoint."
+                                               FontSize="11" Foreground="#818A97" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#1C1F26" CornerRadius="14" Padding="22">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Media controls" FontSize="16" FontWeight="SemiBold" Foreground="White" />
+                            <TextBlock Text="Now-playing metadata, play/pause, previous/next, and output-device selection are the next media-control slice."
+                                       FontSize="12" Foreground="#A7ADB7" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
                 <Border x:Name="PlaceholderContent" Background="#1C1F26" CornerRadius="14" Padding="24"
                         Visibility="Collapsed">
                     <StackPanel Spacing="9">

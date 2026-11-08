@@ -216,7 +216,7 @@ public sealed partial class MainWindow : Window
 
             await EnsureDashboardWebViewAsync();
 
-            var target = _dashboardUri.AbsoluteUri;
+            var target = AddKioskModeParameter(_dashboardUri).AbsoluteUri;
             _lastNavigatedDashboardUri = _dashboardUri;
             DashboardStatusText.Text = "Loading your Home Assistant dashboard…";
             HomeAssistantWebView.CoreWebView2.Navigate(target);
@@ -352,6 +352,39 @@ public sealed partial class MainWindow : Window
         DashboardUnavailableOverlay.Visibility = Visibility.Collapsed;
         HomeAssistantWebView.Visibility = Visibility.Visible;
         DashboardStatusText.Text = "Ready to load your Home Assistant dashboard";
+    }
+
+    /// <summary>
+    /// Requests a dashboard-only presentation from the Home Assistant Kiosk Mode
+    /// frontend resource. If that resource is not installed, Home Assistant simply
+    /// ignores the query parameter and renders its regular frontend.
+    /// </summary>
+    private static Uri AddKioskModeParameter(Uri dashboardUri)
+    {
+        var builder = new UriBuilder(dashboardUri);
+        var query = builder.Query.TrimStart('?');
+        var parameters = query.Split('&', StringSplitOptions.RemoveEmptyEntries);
+
+        var hasKioskParameter = parameters.Any(parameter =>
+            string.Equals(
+                Uri.UnescapeDataString(parameter.Split('=', 2)[0]),
+                "kiosk",
+                StringComparison.OrdinalIgnoreCase));
+
+        // Respect an explicit opt-out included in the configured instance URL.
+        var hasKioskModeOptOut = parameters.Any(parameter =>
+            string.Equals(
+                Uri.UnescapeDataString(parameter.Split('=', 2)[0]),
+                "disable_km",
+                StringComparison.OrdinalIgnoreCase));
+
+        if (hasKioskParameter || hasKioskModeOptOut)
+        {
+            return dashboardUri;
+        }
+
+        builder.Query = string.IsNullOrEmpty(query) ? "kiosk" : $"{query}&kiosk";
+        return builder.Uri;
     }
 
     private static Uri EnsureTrailingSlash(Uri uri)

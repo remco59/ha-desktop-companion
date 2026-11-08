@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from homeassistant.const import Platform
+
 DOMAIN = "desktop_companion"
-PLATFORMS = ["sensor"]
+PLATFORMS = [Platform.SENSOR]
 
 SIGNAL_SENSOR_CATALOG = f"{DOMAIN}_sensor_catalog"
 SIGNAL_SENSOR_REMOVED = f"{DOMAIN}_sensor_removed"

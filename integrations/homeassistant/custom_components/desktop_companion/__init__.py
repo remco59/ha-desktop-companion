@@ -72,7 +72,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: config_entries.ConfigEn
 
 
 @websocket_api.require_admin
-@websocket_api.async_response
 @websocket_api.websocket_command(
     {
         vol.Required("type"): WS_REGISTER_DEVICE,
@@ -94,6 +93,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: config_entries.ConfigEn
         ),
     }
 )
+@websocket_api.async_response
 async def websocket_register_device(
     hass: HomeAssistant,
     connection: websocket_api.ActiveConnection,
@@ -182,13 +182,13 @@ async def websocket_register_device(
     )
 
 
-@websocket_api.async_response
 @websocket_api.websocket_command(
     {
         vol.Required("type"): WS_START_SESSION,
         vol.Required("device_id"): str,
     }
 )
+@websocket_api.async_response
 async def websocket_start_session(
     hass: HomeAssistant,
     connection: websocket_api.ActiveConnection,
@@ -224,7 +224,6 @@ async def websocket_start_session(
     )
 
 
-@websocket_api.async_response
 @websocket_api.websocket_command(
     {
         vol.Required("type"): WS_PUBLISH,
@@ -244,6 +243,7 @@ async def websocket_start_session(
         ),
     }
 )
+@websocket_api.async_response
 async def websocket_publish(
     hass: HomeAssistant,
     connection: websocket_api.ActiveConnection,
@@ -323,13 +323,13 @@ async def websocket_publish(
 
 
 @websocket_api.require_admin
-@websocket_api.async_response
 @websocket_api.websocket_command(
     {
         vol.Required("type"): WS_UNPAIR_DEVICE,
         vol.Required("device_id"): str,
     }
 )
+@websocket_api.async_response
 async def websocket_unpair_device(
     hass: HomeAssistant,
     connection: websocket_api.ActiveConnection,

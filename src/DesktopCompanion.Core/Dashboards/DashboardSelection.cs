@@ -5,14 +5,22 @@ namespace DesktopCompanion.Core.Dashboards;
 /// <summary>Pure selection rules for configured Home Assistant dashboards.</summary>
 public static class DashboardSelection
 {
+    /// <summary>Initial views in the Desktop Companion Home Assistant dashboard.</summary>
+    public static IReadOnlyList<DashboardDefinition> Presets { get; } = Array.AsReadOnly(
+    [
+        DashboardDefinition.Default,
+        new("media", "Media", "desktop-companion/media", "mdi:music", 1),
+        new("system", "System", "desktop-companion/system", "mdi:server", 2)
+    ]);
+
     public static IReadOnlyList<DashboardDefinition> Normalize(IEnumerable<DashboardDefinition>? dashboards)
     {
         var values = (dashboards ?? []).Where(IsValid).ToList();
-        if (values.Count == 0) return [DashboardDefinition.Default];
+        if (values.Count == 0) return Presets;
 
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         values = values.Where(item => ids.Add(item.Id)).ToList();
-        if (values.Count == 0) return [DashboardDefinition.Default];
+        if (values.Count == 0) return Presets;
 
         var defaultIndex = values.FindIndex(item => item.IsDefault);
         if (defaultIndex < 0)

@@ -135,10 +135,10 @@ Treat this as the current accepted baseline. Do not re-open the decision to embe
 - Installer in-place upgrade behaviour has not yet been confirmed by a clean upgrade test. PR #14 changes the Inno Setup file handling and process detection; CI packaging success is not proof of a successful upgrade on a real Windows machine.
 - A full single-instance activation handoff is missing.
 - Dashboard definitions and last-selected dashboard ID are persisted in the existing non-secret settings document; broader SQLite-backed settings remain a later milestone. The first-run preset list is Control, Media, and System for the Desktop Companion dashboard.
-- The Sensors, Actions, Applications & Media, and Notifications areas are still placeholders.
-- The Windows sensor provider is only a small scaffold (uptime, computer name, Windows version).
-- The Home Assistant custom integration is a config-flow scaffold; it does not yet pair a PC or create telemetry entities.
-- No secure telemetry pairing protocol has been approved or implemented.
+- The Sensors page now contains native CPU, memory, uptime, per-volume storage, and per-adapter network readings (PRs #19–20); CPU, memory and uptime were compared with Task Manager on Windows 11, while storage/network hardware acceptance remains open.
+- The Home Assistant integration and Windows client implement secure PC pairing and selected sensor publishing (PR #21); live pairing, restart/reconnect and revocation acceptance on the user's HA instance remain open.
+- Applications & Media now includes default-endpoint volume/mute (PR #22), trusted Start Menu discovery/search/launch (PR #23), and initial global media-session metadata/transport controls (PR #24); Windows hardware acceptance remains open.
+- Actions and Notifications remain placeholders; provider configuration, tray favourites, SQLite-backed settings, and several release-quality tasks are still outstanding.
 - No production-grade settings/database layer or sensor configuration UI exists.
 - Automated unit/integration coverage is still limited and needs to grow with each vertical slice.
 
@@ -276,10 +276,10 @@ Acceptance:
 Current implementation note (2026-11-08): native master volume and mute are implemented in draft PR #22, stacked on Home Assistant sensor-publishing PR #21. The Applications & Media page reads and controls the default Windows playback endpoint through Core Audio. PR #23 adds local Start Menu application discovery/search/launch using only trusted shortcut paths; it never accepts arbitrary paths or remote launch commands. Real playback-device and installed-app launch validation still require Windows acceptance.
 
 Suggested order:
-1. Master volume and mute.
-2. Default output device selection.
-3. Media transport controls and now-playing metadata.
-4. Application discovery and launch.
+1. Master volume and mute (draft PR #22; Windows acceptance pending).
+2. Global media-session metadata and transport controls (draft PR #24; Windows acceptance pending).
+3. Application discovery and launch (draft PR #23; Windows acceptance pending).
+4. Default system output-device selection is deferred: the supported Windows Core Audio API exposes enumeration and reading the default endpoint but no documented public setter. Do not use the undocumented private IPolicyConfig COM interface; users can continue to change the system default in Windows Settings.
 5. Focus/minimise/close application controls.
 6. Per-application audio levels/output routing where supported.
 7. Selected safe system actions (lock, sleep, restart/shutdown only with explicit local confirmation and opt-in).
@@ -392,7 +392,7 @@ The next work should be selected from this order unless new user feedback change
 
 ### Immediate next implementation slice
 
-Draft PR #21 contains the secure HA pairing and selected-sensor publishing slice; live HA pairing/restart/revocation acceptance is still required. Draft PR #22 begins Phase 4 with native master volume and mute. After CI review and Windows hardware acceptance, proceed with default output-device selection and global media-session controls, then finish the provider registry and sensor settings.
+The active stack now contains PRs #18–24. The next step is not another feature expansion: complete live Windows acceptance for dashboard switching, storage/network readings, volume/mute, installed-app discovery/launch, and media-session controls, plus live Home Assistant pairing/reconnect/revocation. System default output-device switching stays deferred because there is no supported public Windows API for setting it. After acceptance, finish the sensor provider registry and settings, then move to tray actions and notifications.
 
 ---
 
@@ -435,4 +435,5 @@ At the time of writing:
 - PR #21 — [secure Home Assistant pairing and sensor publishing](https://github.com/remco59/ha-desktop-companion/pull/21) — draft, stacked on PR #20. Implements ADR 0008, HA device/entity registration, session-secured telemetry, Windows sensor selection/publishing controls, and Python protocol tests. Live pairing acceptance remains outstanding.
 - PR #22 — [native Windows master volume and mute](https://github.com/remco59/ha-desktop-companion/pull/22) — draft, stacked on PR #21. Adds Core Audio endpoint volume/mute controls to Applications & Media; real playback-device validation remains open.
 - PR #23 — [Start Menu application discovery and launch](https://github.com/remco59/ha-desktop-companion/pull/23) — draft, stacked on PR #22. Enumerates trusted Start Menu shortcuts, filters by app name and launches only a currently catalogued shortcut after path validation; no arbitrary executable path or remote command support.
+- PR #24 — [global media-session controls and now-playing metadata](https://github.com/remco59/ha-desktop-companion/pull/24) — draft, stacked on PR #23. Uses Windows System Media Transport Controls for the current session; real Windows playback acceptance remains open.
 - The current project plan is documentation, not permission to merge, release, or change production Home Assistant configuration.

@@ -31,13 +31,35 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
             properties.AlbumTitle ?? string.Empty,
             session.SourceAppUserModelId ?? string.Empty,
             playback.PlaybackStatus.ToString(),
-            controls.IsPlayPauseToggleEnabled || controls.IsPlayEnabled || controls.IsPauseEnabled,
+            (playback.PlaybackStatus.ToString() == "Playing"
+                ? controls.IsPlayPauseToggleEnabled || controls.IsPauseEnabled
+                : controls.IsPlayPauseToggleEnabled || controls.IsPlayEnabled),
             controls.IsPreviousEnabled,
             controls.IsNextEnabled);
     }
 
-    public Task<bool> TogglePlayPauseAsync(CancellationToken cancellationToken = default) =>
-        ExecuteAsync(static session => session.TryTogglePlayPauseAsync(), cancellationToken);
+    public async Task<bool> TogglePlayPauseAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var manager = await GlobalSystemMediaTransportControlsSessionManager.RequestAsync();
+        cancellationToken.ThrowIfCancellationRequested();
+        var session = manager.GetCurrentSession();
+        if (session is null)
+            return false;
+
+        var playback = session.GetPlaybackInfo();
+        var controls = playback.Controls;
+        if (controls.IsPlayPauseToggleEnabled)
+            return await session.TryTogglePlayPauseAsync();
+
+        if (playback.PlaybackStatus.ToString() == "Playing" && controls.IsPauseEnabled)
+            return await session.TryPauseAsync();
+
+        if (playback.PlaybackStatus.ToString() != "Playing" && controls.IsPlayEnabled)
+            return await session.TryPlayAsync();
+
+        return false;
+    }
 
     public Task<bool> SkipPreviousAsync(CancellationToken cancellationToken = default) =>
         ExecuteAsync(static session => session.TrySkipPreviousAsync(), cancellationToken);

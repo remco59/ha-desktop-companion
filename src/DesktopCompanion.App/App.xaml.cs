@@ -5,6 +5,7 @@ using DesktopCompanion.HomeAssistant.Services;
 using DesktopCompanion.HomeAssistant.WebSocket;
 using DesktopCompanion.Windows.Applications;
 using DesktopCompanion.Windows.Audio;
+using DesktopCompanion.Windows.Media;
 using DesktopCompanion.Windows.Security;
 using DesktopCompanion.Windows.Sensors;
 using DesktopCompanion.Windows.Tray;
@@ -22,6 +23,7 @@ public partial class App : Application
     private IHomeAssistantTelemetryClient? _telemetryClient;
     private IAudioControlService? _audioControlService;
     private IApplicationCatalogService? _applicationCatalogService;
+    private IMediaSessionService? _mediaSessionService;
     private WindowsSensorMonitor? _sensorMonitor;
     private Task? _sensorMonitorStartTask;
     private SensorSample? _latestSensorSample;
@@ -53,9 +55,14 @@ public partial class App : Application
         _mainWindow.AudioRefreshRequested += OnAudioRefreshRequested;
         _mainWindow.ApplicationsRefreshRequested += OnApplicationsRefreshRequested;
         _mainWindow.ApplicationLaunchRequested += OnApplicationLaunchRequested;
+        _mainWindow.MediaRefreshRequested += OnMediaRefreshRequested;
+        _mainWindow.MediaTogglePlayPauseRequested += OnMediaTogglePlayPauseRequested;
+        _mainWindow.MediaPreviousRequested += OnMediaPreviousRequested;
+        _mainWindow.MediaNextRequested += OnMediaNextRequested;
 
         _audioControlService = new WindowsAudioControlService();
         _applicationCatalogService = new WindowsStartMenuApplicationCatalogService();
+        _mediaSessionService = new WindowsMediaSessionService();
         _telemetryClient = new HomeAssistantTelemetryWebSocketClient();
         _pairedDeviceId = AppSettingsStore.LoadPairedDeviceId();
         _mainWindow.UpdateHomeAssistantPublishingStatus(
@@ -96,6 +103,57 @@ public partial class App : Application
 
     private async void OnApplicationLaunchRequested(string applicationId) =>
         await LaunchApplicationAsync(applicationId);
+
+    private async void OnMediaRefreshRequested() =>
+        await RefreshMediaSessionAsync();
+
+    private async void OnMediaTogglePlayPauseRequested() =>
+        await RunMediaCommandAsync("playback", service => service.TogglePlayPauseAsync());
+
+    private async void OnMediaPreviousRequested() =>
+        await RunMediaCommandAsync("previous track", service => service.SkipPreviousAsync());
+
+    private async void OnMediaNextRequested() =>
+        await RunMediaCommandAsync("next track", service => service.SkipNextAsync());
+
+    private async Task RefreshMediaSessionAsync()
+    {
+        if (_mediaSessionService is null || _mainWindow is null) return;
+        try
+        {
+            var state = await _mediaSessionService.GetCurrentSessionAsync();
+            _mainWindow.SetMediaSessionState(state);
+        }
+        catch (Exception exception)
+        {
+            _mainWindow.SetMediaSessionError($"Could not read Windows media session: {exception.Message}");
+        }
+    }
+
+    private async Task RunMediaCommandAsync(
+        string action,
+        Func<IMediaSessionService, Task<bool>> command)
+    {
+        if (_mediaSessionService is null || _mainWindow is null) return;
+        try
+        {
+            var succeeded = await command(_mediaSessionService);
+            if (!succeeded)
+            {
+                _mainWindow.SetMediaSessionError(
+                    $"Windows could not perform {action}; the active media session may not support it.");
+                return;
+            }
+
+            await RefreshMediaSessionAsync();
+        }
+        catch (Exception exception)
+        {
+            _mainWindow.SetMediaSessionError($"Could not control {action}: {exception.Message}");
+        }
+    }
+
+
 
     private async Task RefreshApplicationCatalogAsync()
     {

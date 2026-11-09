@@ -67,7 +67,7 @@ Status legend:
 - [x] Add native master-volume and mute controls to Applications & Media using the Windows Core Audio endpoint API (draft PR #22).
 - [ ] Verify volume/mute behaviour against Windows Settings and hardware buttons on Windows 11.
 - [ ] Default audio output-device selection.
-- [ ] Media transport controls and now-playing metadata.
+- [x] Initial global media-session metadata and play/pause/previous/next controls (draft PR #24; Windows acceptance pending).
 - [x] Add local Start Menu application discovery, search and launch through validated shortcut identities (draft PR #23).
 - [ ] Verify discovered apps and launch behaviour on Windows 11; packaged Store apps without Start Menu shortcuts may not appear.
 - [ ] Focus/minimise/close application controls.
@@ -94,6 +94,7 @@ Status legend:
 - [ ] Application library, discovery, favourites, and launch/status.
 - [ ] Now-playing metadata and global media controls.
 - [ ] Audio-session and output-device information.
+- [ ] System default output-device switching (deferred: Windows exposes no supported public API for changing the system default endpoint; do not depend on undocumented private COM interfaces).
 - [ ] Configurable global keyboard shortcuts with conflict detection.
 - [ ] Optional Windows startup preference (opt-in).
 - [ ] Privacy controls for what PC information is exposed to Home Assistant.
@@ -114,6 +115,6 @@ Status legend:
 
 PR #21 is the first secure Home Assistant pairing and sensor-publishing slice, stacked on PR #20. It implements ADR 0008, device registration, selected sensor entities, a separate outbound telemetry WebSocket and per-sensor availability. Live HA pairing, reconnect, restart and revoke tests remain to be completed.
 
-After that acceptance, complete the provider registry, configurable sampling intervals, sensor enable/disable preferences and capability diagnostics. Then proceed to native Windows audio and media controls.
+The current draft stack now includes native volume/mute (PR #22), installed-app discovery/launch (PR #23), and global media-session metadata/transport controls (PR #24). Complete the required Windows acceptance tests for these features and the live Home Assistant pairing flow. Then finish the sensor provider registry, configurable sampling intervals, sensor enable/disable preferences and capability diagnostics before moving on to tray actions and notifications.
 
 See [the Product Plan](product-plan.md) for scope, implementation notes, acceptance criteria, and the session restart checklist.

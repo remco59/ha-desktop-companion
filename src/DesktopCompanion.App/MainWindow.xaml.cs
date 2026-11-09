@@ -62,6 +62,10 @@ public sealed partial class MainWindow : Window
     public event Action? AudioRefreshRequested;
     public event Action? ApplicationsRefreshRequested;
     public event Action<string>? ApplicationLaunchRequested;
+    public event Action? MediaRefreshRequested;
+    public event Action? MediaTogglePlayPauseRequested;
+    public event Action? MediaPreviousRequested;
+    public event Action? MediaNextRequested;
 
     public void SetHomeAssistantUrl(string url) => HomeAssistantUrlInput.Text = url;
 
@@ -253,6 +257,47 @@ public sealed partial class MainWindow : Window
         });
     }
 
+    public void SetMediaSessionState(MediaSessionState? state)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (state is null)
+            {
+                MediaSessionTitleText.Text = "Nothing is playing";
+                MediaSessionArtistText.Text = "Start playback in a supported app.";
+                MediaSessionAlbumText.Text = string.Empty;
+                MediaSessionAppText.Text = string.Empty;
+                MediaPreviousButton.IsEnabled = false;
+                MediaPlayPauseButton.IsEnabled = false;
+                MediaNextButton.IsEnabled = false;
+                MediaControlStatusText.Text = "No active Windows media session was found.";
+                return;
+            }
+
+            MediaSessionTitleText.Text = string.IsNullOrWhiteSpace(state.Title) ? "Unknown title" : state.Title;
+            MediaSessionArtistText.Text = string.IsNullOrWhiteSpace(state.Artist) ? "Unknown artist" : state.Artist;
+            MediaSessionAlbumText.Text = state.Album;
+            MediaSessionAppText.Text = string.IsNullOrWhiteSpace(state.ApplicationId)
+                ? state.PlaybackStatus
+                : $"{state.ApplicationId} · {state.PlaybackStatus}";
+            MediaPreviousButton.IsEnabled = state.CanSkipPrevious;
+            MediaPlayPauseButton.IsEnabled = state.CanTogglePlayPause;
+            MediaNextButton.IsEnabled = state.CanSkipNext;
+            MediaPlayPauseButton.Content = state.PlaybackStatus == "Playing" ? "Pause" : "Play";
+            MediaControlStatusText.Text = "Connected to the active Windows media session.";
+        });
+    }
+
+    public void SetMediaSessionError(string message)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            MediaControlStatusText.Text = message;
+        });
+    }
+
+
+
     private void OnMasterVolumeSliderChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
         if (!_isUpdatingAudioControls && MasterVolumeSlider.IsEnabled)
@@ -267,6 +312,18 @@ public sealed partial class MainWindow : Window
 
     private void OnRefreshAudioClicked(object sender, RoutedEventArgs e) =>
         AudioRefreshRequested?.Invoke();
+
+    private void OnRefreshMediaSessionClicked(object sender, RoutedEventArgs e) =>
+        MediaRefreshRequested?.Invoke();
+
+    private void OnMediaTogglePlayPauseClicked(object sender, RoutedEventArgs e) =>
+        MediaTogglePlayPauseRequested?.Invoke();
+
+    private void OnMediaPreviousClicked(object sender, RoutedEventArgs e) =>
+        MediaPreviousRequested?.Invoke();
+
+    private void OnMediaNextClicked(object sender, RoutedEventArgs e) =>
+        MediaNextRequested?.Invoke();
 
     public void UpdateConnectionStatus(string title, string detail, bool connected, bool busy = false)
     {
@@ -896,6 +953,7 @@ public sealed partial class MainWindow : Window
         if (isApplicationsMedia)
         {
             AudioRefreshRequested?.Invoke();
+            MediaRefreshRequested?.Invoke();
             ApplicationsRefreshRequested?.Invoke();
         }
         if (isDashboard)

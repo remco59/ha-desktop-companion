@@ -5,6 +5,7 @@ using DesktopCompanion.HomeAssistant.Services;
 using DesktopCompanion.HomeAssistant.WebSocket;
 using DesktopCompanion.Windows.Applications;
 using DesktopCompanion.Windows.Audio;
+using DesktopCompanion.Windows.Media;
 using DesktopCompanion.Windows.Security;
 using DesktopCompanion.Windows.Sensors;
 using DesktopCompanion.Windows.Tray;

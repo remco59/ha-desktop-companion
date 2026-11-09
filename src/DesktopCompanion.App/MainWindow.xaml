@@ -367,10 +367,53 @@
                         </StackPanel>
                     </Border>
                     <Border Background="#1C1F26" CornerRadius="14" Padding="22">
-                        <StackPanel Spacing="6">
-                            <TextBlock Text="Media controls" FontSize="16" FontWeight="SemiBold" Foreground="White" />
-                            <TextBlock Text="Now-playing metadata, play/pause, previous/next, and output-device selection are the next media-control slice."
-                                       FontSize="12" Foreground="#A7ADB7" TextWrapping="Wrap" />
+                        <StackPanel Spacing="14">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Now playing" FontSize="16" FontWeight="SemiBold" Foreground="White" />
+                                    <TextBlock Text="Control the active Windows media session."
+                                               FontSize="12" Foreground="#A7ADB7" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="Refresh" Click="OnRefreshMediaSessionClicked"
+                                        Background="#343B47" Foreground="#DFE3E8" BorderThickness="0"
+                                        CornerRadius="8" Padding="14,8" />
+                            </Grid>
+                            <Border Background="#252A33" CornerRadius="10" Padding="16">
+                                <StackPanel Spacing="7">
+                                    <TextBlock x:Name="MediaSessionTitleText" Text="Nothing is playing"
+                                               FontSize="18" FontWeight="SemiBold" Foreground="White"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock x:Name="MediaSessionArtistText" Text="Start playback in a supported app."
+                                               FontSize="13" Foreground="#DFE3E8"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock x:Name="MediaSessionAlbumText" Text=""
+                                               FontSize="11" Foreground="#A7ADB7"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock x:Name="MediaSessionAppText" Text=""
+                                               FontSize="10" Foreground="#818A97"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
+                                        <Button x:Name="MediaPreviousButton" Content="Previous"
+                                                Click="OnMediaPreviousClicked" IsEnabled="False"
+                                                Background="#343B47" Foreground="White" BorderThickness="0"
+                                                CornerRadius="8" Padding="14,8" />
+                                        <Button x:Name="MediaPlayPauseButton" Content="Play / Pause"
+                                                Click="OnMediaTogglePlayPauseClicked" IsEnabled="False"
+                                                Background="#176B91" Foreground="White" BorderThickness="0"
+                                                CornerRadius="8" Padding="18,8" />
+                                        <Button x:Name="MediaNextButton" Content="Next"
+                                                Click="OnMediaNextClicked" IsEnabled="False"
+                                                Background="#343B47" Foreground="White" BorderThickness="0"
+                                                CornerRadius="8" Padding="14,8" />
+                                    </StackPanel>
+                                    <TextBlock x:Name="MediaControlStatusText" Text="Waiting for a Windows media session."
+                                               FontSize="11" Foreground="#818A97" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </Border>
                     <Border Background="#1C1F26" CornerRadius="14" Padding="22">
